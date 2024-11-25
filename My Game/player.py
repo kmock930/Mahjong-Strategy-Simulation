@@ -16,11 +16,11 @@ class Player:
     flowers: list[Card] = []
     hu: bool = False
 
-    def __init__(self, Id: int, wind: str, hand: list='東'):
+    def __init__(self, Id: int, wind: str, hand: list='東', logger: GameLog = None):
         self.Id = Id
         self.wind = wind
         self.hand = hand
-        self.logger = GameLog()
+        self.logger = logger
 
     def draw(self, tile: Card):
         self.hand.append(tile)

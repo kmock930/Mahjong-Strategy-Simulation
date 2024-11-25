@@ -6,6 +6,13 @@ import random
 import rlcard
 from rlcard.games.mahjong.game import MahjongGame as Game
 
+# for debugging
+import importlib
+import gameLog
+import player
+importlib.reload(gameLog)
+importlib.reload(player)
+
 class CustomGame(Game):
     '''
     Mahjong Game Environment
@@ -16,16 +23,16 @@ class CustomGame(Game):
     game: Game = None
     logger: GameLog = None
 
-    def __init__(self, experiment: bool = False, players: list[Player] = []):
+    def __init__(self, experiment: bool = False, players: list[Player] = None, gameID: int = 1):
         self.game = rlcard.make('mahjong').game
-        self.logger = GameLog()
+        self.logger = GameLog(gameID=gameID)
         # init players
         self.logger.log("Initializing players...")
-        self.players = players if len(players) > 0 else [
-            Player(1, '東', []),
-            Player(2, '南', []),
-            Player(3, '西', []),
-            Player(4, '北', [])
+        self.players = players if players is not None and len(players) > 0 else [
+            Player(1, '東', [], logger=self.logger),
+            Player(2, '南', [], logger=self.logger),
+            Player(3, '西', [], logger=self.logger),
+            Player(4, '北', [], logger=self.logger)
         ]
         self.init_tiles()
         
@@ -153,10 +160,13 @@ class CustomGame(Game):
         '''
         Run the game
         '''
+        self.logger.log("Starting game run...")
         currentPlayerIndex = 0
         while len(self.unseenTiles) > 0:
+            self.logger.log(f"Player {self.players[currentPlayerIndex].Id}'s turn")
             self.play(self.players[currentPlayerIndex].Id)
             currentPlayerIndex = (currentPlayerIndex + 1) % len(self.players)
+        self.logger.log("Game run ended.")
 
     def reset(self):
         '''
@@ -178,15 +188,26 @@ class CustomGame(Game):
             player.wind = winds[(current_wind_index + 1) % len(winds)]
 
 def main():
-    game = CustomGame(experiment=True)
     num_games = 4  # Number of games to run
 
     for iteration in range(num_games):
-        game.logger.log(f"Game {iteration+1}")
-        game.logger.log(f"Wind: Player 1 = {game.players[0].wind}, Player 2 = {game.players[1].wind}, Player 3 = {game.players[2].wind}, Player 4 = {game.players[3].wind}")
+        game = CustomGame(
+            experiment=True,
+            gameID=iteration+1
+        )
+
+        game.logger.log(f"Starting Game {iteration+1}")
+
+        # player logs
+        logString:str = ""
+        for playerID, player in enumerate(game.players):
+            logString:str = logString + f"Wind Player {playerID+1}: {player.wind} "
+        game.logger.log(logString)
+        
         game.run()
         game.reset()
         game.shift_winds()
+        game.logger.log_end()
 
 if __name__ == "__main__":
     main()

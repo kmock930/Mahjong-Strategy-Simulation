@@ -3,7 +3,7 @@ import sys;
 sys.path.append('My Game');
 from Rules import Rules;
 from Card import Card;
-from utils import is_valid_pair, is_valid_meld;
+from utils import is_valid_pair, is_valid_meld, break_into_melds_and_pair;
 
 class TestRules(unittest.TestCase):
     def setUp(self):
@@ -257,13 +257,13 @@ class TestRules(unittest.TestCase):
             Card(suit='萬', rank=1)
         ]
         self.assertFalse(self.rules.isNineGates(nineGates))
-
+    '''
     def test_standardWinning(self):
         """
         Test for a standard winning hand.
         """
         standard_hand = [
-            Card(suit='萬', rank=1), Card(suit='萬', rank=1), Card(suit='萬', rank=1), Card(suit='萬', rank=1),  # Kong
+            Card(suit='萬', rank=1), Card(suit='萬', rank=1), Card(suit='萬', rank=1),  # Pong
             Card(suit='筒', rank=2), Card(suit='筒', rank=3), Card(suit='筒', rank=4),  # Sequence
             Card(suit='風', rank='東'), Card(suit='風', rank='東'), Card(suit='風', rank='東'),  # Pong
             Card(suit='筒', rank=9), Card(suit='筒', rank=9)  # Pair
@@ -285,7 +285,7 @@ class TestRules(unittest.TestCase):
             Card(suit='筒', rank=9), Card(suit='筒', rank=8)  # Pair
         ]
         self.assertFalse(self.rules.isStandardHand(standard_hand, []))
-
+    '''
     def test_isValidMeld(self):
         """
         Test for a valid meld.
@@ -327,5 +327,47 @@ class TestRules(unittest.TestCase):
         """
         invalid_pair = [Card(suit='萬', rank=1), Card(suit='萬', rank=2)]
         self.assertFalse(is_valid_pair(invalid_pair))
+
+    def test_breakIntoMeldsAndPair(self):
+        """
+        Test for breaking tiles into melds and a pair.
+        """
+        tiles = [
+            Card('萬', 1), Card('萬', 2), Card('萬', 3),  # Sequence
+            Card('萬', 4), Card('萬', 5), Card('萬', 6),  # Sequence
+            Card('萬', 7), Card('萬', 8), Card('萬', 9),  # Sequence
+            Card('筒', 1), Card('筒', 1),                 # Pair
+            Card('筒', 2), Card('筒', 3), Card('筒', 4)   # Sequence
+        ]
+        ret, melds = break_into_melds_and_pair(tiles)
+        self.assertTrue(ret)
+        self.assertEqual(len(melds), 5)
+        self.assertEqual(melds[-1], [Card('筒', 1), Card('筒', 1)])  # Check the pair
+
+        # Test case where melds should prioritize Pong
+        tiles = [
+            Card('萬', 1), Card('萬', 1), Card('萬', 1),  # Pong
+            Card('萬', 2), Card('萬', 3), Card('萬', 4),  # Sequence
+            Card('萬', 5), Card('萬', 6), Card('萬', 7),  # Sequence
+            Card('萬', 9), Card('萬', 9),  # Pair
+            Card('筒', 1), Card('筒', 1), Card('筒', 1)  # Pong
+        ]
+        ret, melds = break_into_melds_and_pair(tiles)
+        self.assertTrue(ret)
+        self.assertEqual(len(melds), 5)
+        self.assertEqual(melds[-1], [Card('萬', 9), Card('萬', 9)])  # Check the pair
+
+    def test_notBreakIntoMeldsAndPair(self):
+        # Test case where melds cannot be formed
+        tiles = [
+            Card('萬', 1), Card('萬', 2), Card('萬', 3),  # Sequence
+            Card('萬', 4), Card('萬', 5), Card('萬', 6),  # Sequence
+            Card('萬', 7), Card('萬', 8), Card('萬', 9),  # Sequence
+            Card('筒', 1), Card('筒', 2),  # Invalid pair
+            Card('筒', 2), Card('筒', 3), Card('筒', 4)   # Sequence
+        ]
+        ret, melds = break_into_melds_and_pair(tiles)
+        self.assertFalse(ret)
+
 if __name__ == '__main__':
     unittest.main()

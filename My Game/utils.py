@@ -20,14 +20,7 @@ def is_valid_meld(meld: list[Card]) -> bool:
     if (any(tile.suit not in ('萬', '筒', '索') for tile in meld)):
         return False;
     # sort a meld by rank
-    sortedMeld = [];
-    for tileID in range(len(meld)-1):
-        currTile = meld[tileID] 
-        if (currTile.rank > meld[tileID+1].rank):
-            sortedMeld.append(meld[tileID+1])
-            sortedMeld.append(currTile);
-    meld = sortedMeld.copy();
-    del sortedMeld;
+    meld.sort(key=lambda tile: tile.rank);
     # Determine if it is a meld in sequence
     if (len(meld) == 3 and meld[0].rank + 1 == meld[1].rank and meld[1].rank + 1 == meld[2].rank):  # Sequence
         return True;
@@ -67,7 +60,6 @@ def break_into_melds_and_pair(tiles: list[Card]) -> tuple[bool, list[list[Card]]
                             melds.append(meld);
                 
                 # Check for melds of 3 tiles in sequence (Chow)
-                counterTiles = Counter([(tile.suit, tile.rank) for tile in remaining_tiles]);
                 for chosenTile in tiles:
                     if (chosenTile.suit not in ('萬', '筒', '索')):
                         break;
@@ -97,7 +89,7 @@ def break_into_melds_and_pair(tiles: list[Card]) -> tuple[bool, list[list[Card]]
                             isChow = isChow and (tile.suit in uniqueSuits and tile.rank in uniqueRanks);
                             if (isChow == True):
                                 meldTiles.append(tile);
-                        isChow = isChow and len(meldTiles) == 3;  
+                        isChow = isChow and len(meldTiles) == 3 and is_valid_meld(meldTiles);  
                         if (isChow):  
                             melds.append(meldTiles);
                             remaining_tiles = [

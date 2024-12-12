@@ -3,6 +3,7 @@ import sys;
 sys.path.append('My Game');
 from Rules import Rules;
 from Card import Card;
+from utils import is_valid_pair, is_valid_meld;
 
 class TestRules(unittest.TestCase):
     def setUp(self):
@@ -285,5 +286,46 @@ class TestRules(unittest.TestCase):
         ]
         self.assertFalse(self.rules.isStandardHand(standard_hand, []))
 
+    def test_isValidMeld(self):
+        """
+        Test for a valid meld.
+        """
+        # Kong
+        valid_meld = [Card(suit='萬', rank=1), Card(suit='萬', rank=1), Card(suit='萬', rank=1), Card(suit='萬', rank=1)]
+        self.assertTrue(is_valid_meld(valid_meld))
+        # Pong
+        valid_meld = [Card(suit='萬', rank=1), Card(suit='萬', rank=1), Card(suit='萬', rank=1)]
+        self.assertTrue(is_valid_meld(valid_meld))
+        # Chow
+        valid_meld = [Card(suit='萬', rank=1), Card(suit='萬', rank=2), Card(suit='萬', rank=3)]
+        self.assertTrue(is_valid_meld(valid_meld))
+
+    def test_isNotValidMeld(self):
+        """
+        Test for an invalid meld.
+        """
+        # Kong
+        invalid_meld = [Card(suit='風', rank='東'), Card(suit='風', rank='東'), Card(suit='風', rank='東'), Card(suit='風', rank='南')]
+        self.assertFalse(is_valid_meld(invalid_meld))
+        # Pong
+        invalid_meld = [Card(suit='萬', rank=1), Card(suit='萬', rank=1)]
+        self.assertFalse(is_valid_meld(invalid_meld))
+        # Chow
+        invalid_meld = [Card(suit='萬', rank=1), Card(suit='萬', rank=2), Card(suit='萬', rank=4)]
+        self.assertFalse(is_valid_meld(invalid_meld))
+
+    def test_isValidPair(self):
+        """
+        Test for a valid pair.
+        """
+        valid_pair = [Card(suit='萬', rank=1), Card(suit='萬', rank=1)]
+        self.assertTrue(is_valid_pair(valid_pair))
+
+    def test_isNotValidPair(self):
+        """
+        Test for an invalid pair.
+        """
+        invalid_pair = [Card(suit='萬', rank=1), Card(suit='萬', rank=2)]
+        self.assertFalse(is_valid_pair(invalid_pair))
 if __name__ == '__main__':
     unittest.main()

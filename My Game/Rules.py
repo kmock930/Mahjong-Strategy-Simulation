@@ -1,6 +1,7 @@
 from player import Player;
 from Card import Card;
 from collections import Counter
+from utils import break_into_melds_and_pair
 import math;
 
 class Rules:
@@ -56,6 +57,14 @@ class Rules:
             if (self.isThirteenOrphans(specialHand)):
                 self.score += 13;
                 self.isWinning = True;
+            
+            if (self.isPureTerminals(specialHand)):
+                self.score += 1;
+                self.isWinning = True;
+            
+            if (self.isMixedTerminals(specialHand)):
+                self.score += 1;
+                self.isWinning = True;
 
             # special rules that add 1 point
             if (self.isWinning == True and self.incomingPlayerId == self.currentPlayerId):
@@ -64,6 +73,27 @@ class Rules:
                 self.score += 1;
     
         return self.score if self.isWinning == True else None;
+
+    def isStandardHand(self, closedDeck: list[Card], openDeck: list[list[Card]]) -> bool:
+        '''
+        Check if the tiles form a standard hand.
+        '''
+        targetNumMeldInClosed = 4 - len(openDeck);
+        ret: bool = False;
+        
+        tiles = closedDeck + [tile for meld in openDeck for tile in meld]
+        if (len(tiles) < 14):
+            print("Not enough tiles to win.");
+            return ret;
+    
+        ret, melds = break_into_melds_and_pair(closedDeck);
+        pair = melds[-1];
+        melds = melds[:-1];
+
+        # not counting the last group (which is a pair)
+        return ret and len(melds) == targetNumMeldInClosed;
+                
+
 
     ####################################################################
     # Special Hand Rules
@@ -87,6 +117,13 @@ class Rules:
 
     # 清么九
     def isPureTerminals(self, tiles: list[Card]) -> bool:
+        '''
+        Check if the tiles form a pure terminal hand.
+        '''
+        return all(tile.rank in [1, 9] for tile in tiles) and len(tiles) >= 14;
+
+    # 混么九
+    def isMixedTerminals(self, tiles: list[Card]) -> bool:
         '''
         Check if the tiles form a pure terminal hand.
         '''
@@ -153,3 +190,23 @@ class Rules:
         suits = {tile.suit for tile in tiles if tile.suit not in ['風', '箭', '花']}
         has_honors = any(tile.suit in ['風', '箭'] for tile in tiles)
         return len(suits) == 1 and has_honors and len(tiles) >= 14;
+
+    # 九指連環
+    def isNineGates(self, tiles: list[Card]) -> bool:
+        '''
+        Check if the tiles form a nine gates hand.
+        '''
+        if (len(tiles) < 14):
+            return False;
+    
+        counterSuits = Counter(tile.suit for tile in tiles if tile.suit in ('萬', '筒', '索'));
+        if (len(counterSuits) != 1):
+            return False;
+
+        counterRank = Counter(tile.rank for tile in tiles if tile.suit in ('萬', '筒', '索'));
+        if all(rank in counterRank for rank in range(1, 10)):
+            return ((counterRank[1] == 4 and counterRank[9] == 3 and all(counterRank[rank] == 1 for rank in range(2, 9))) or # pair at 9
+                    (counterRank[9] == 4 and counterRank[1] == 3 and all(counterRank[rank] == 1 for rank in range(2, 9))) or # pair at 1
+                    (counterRank[1] == 3 and counterRank[9] == 3 and any(counterRank[rank] == 2 for rank in range(2, 9))) # pair at 2 to 8
+                   );
+        return False;

@@ -71,6 +71,30 @@ class TestRules(unittest.TestCase):
         ]
         self.assertFalse(self.rules.isPureTerminals(not_pureTerminal))
 
+    def test_isMixedTerminal(self):
+        mixedTerminal = [
+            Card(suit='萬', rank=1), Card(suit='萬', rank=9),
+            Card(suit='萬', rank=1), Card(suit='萬', rank=9),
+            Card(suit='萬', rank=1), Card(suit='萬', rank=9),
+            Card(suit='筒', rank=1), Card(suit='筒', rank=9),
+            Card(suit='筒', rank=1), Card(suit='筒', rank=9),
+            Card(suit='筒', rank=1), Card(suit='筒', rank=9),
+            Card(suit='箭', rank='中'), Card(suit='箭', rank='發'),
+        ]
+        self.assertTrue(self.rules.isMixedTerminals(mixedTerminal))
+
+    def test_isNotMixedTerminal(self):
+        mixedTerminal = [
+            Card(suit='萬', rank=1), Card(suit='萬', rank=9),
+            Card(suit='萬', rank=1), Card(suit='萬', rank=9),
+            Card(suit='萬', rank=1), Card(suit='萬', rank=9),
+            Card(suit='筒', rank=1), Card(suit='筒', rank=9),
+            Card(suit='筒', rank=2), Card(suit='筒', rank=9),
+            Card(suit='筒', rank=3), Card(suit='筒', rank=9),
+            Card(suit='箭', rank='中'), Card(suit='箭', rank='發'),
+        ]
+        self.assertFalse(self.rules.isMixedTerminals(mixedTerminal))
+
     def test_ishonors(self):
         honors = [
             Card(suit='風', rank='東'), Card(suit='風', rank='東'), Card(suit='風', rank='東'), 
@@ -210,6 +234,56 @@ class TestRules(unittest.TestCase):
             Card(suit='筒', rank=4), Card(suit='筒', rank=4)
         ]
         self.assertFalse(self.rules.isAllOneSuit(allInOneSuit))
+
+    def test_isNineGates(self):
+        nineGates = [
+            Card(suit='萬', rank=1), Card(suit='萬', rank=1), Card(suit='萬', rank=1),
+            Card(suit='萬', rank=2), Card(suit='萬', rank=3), Card(suit='萬', rank=4),
+            Card(suit='萬', rank=5), Card(suit='萬', rank=6), Card(suit='萬', rank=7),
+            Card(suit='萬', rank=8), 
+            Card(suit='萬', rank=9), Card(suit='萬', rank=9), Card(suit='萬', rank=9),
+            Card(suit='萬', rank=1)
+        ]
+        self.assertTrue(self.rules.isNineGates(nineGates))
+
+    def test_isNotNineGates(self):
+        nineGates = [
+            Card(suit='萬', rank=1), Card(suit='萬', rank=1), Card(suit='萬', rank=1),
+            Card(suit='萬', rank=2), Card(suit='萬', rank=3), Card(suit='萬', rank=4),
+            Card(suit='萬', rank=5), Card(suit='萬', rank=6), Card(suit='萬', rank=7),
+            Card(suit='索', rank=8), 
+            Card(suit='萬', rank=9), Card(suit='萬', rank=9), Card(suit='萬', rank=9),
+            Card(suit='萬', rank=1)
+        ]
+        self.assertFalse(self.rules.isNineGates(nineGates))
+
+    def test_standardWinning(self):
+        """
+        Test for a standard winning hand.
+        """
+        standard_hand = [
+            Card(suit='萬', rank=1), Card(suit='萬', rank=1), Card(suit='萬', rank=1), Card(suit='萬', rank=1),  # Kong
+            Card(suit='筒', rank=2), Card(suit='筒', rank=3), Card(suit='筒', rank=4),  # Sequence
+            Card(suit='風', rank='東'), Card(suit='風', rank='東'), Card(suit='風', rank='東'),  # Pong
+            Card(suit='筒', rank=9), Card(suit='筒', rank=9)  # Pair
+        ]
+        openDeck = [
+            [Card(suit='索', rank=5), Card(suit='索', rank=5), Card(suit='索', rank=5)],  # Pong
+        ]
+        self.assertTrue(self.rules.isStandardHand(standard_hand, openDeck))
+
+    def test_NotStandardWinning(self):
+        """
+        Test for a standard winning hand.
+        """
+        standard_hand = [
+            Card(suit='萬', rank=1), Card(suit='萬', rank=1), Card(suit='萬', rank=1), Card(suit='萬', rank=1),  # Kong
+            Card(suit='筒', rank=2), Card(suit='筒', rank=3), Card(suit='筒', rank=4),  # Sequence
+            Card(suit='風', rank='東'), Card(suit='風', rank='東'), Card(suit='風', rank='東'),  # Pong
+            Card(suit='索', rank=5), Card(suit='索', rank=5), Card(suit='索', rank=5),
+            Card(suit='筒', rank=9), Card(suit='筒', rank=8)  # Pair
+        ]
+        self.assertFalse(self.rules.isStandardHand(standard_hand, []))
 
 if __name__ == '__main__':
     unittest.main()

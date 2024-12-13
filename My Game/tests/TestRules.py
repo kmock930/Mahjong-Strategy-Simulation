@@ -257,7 +257,7 @@ class TestRules(unittest.TestCase):
             Card(suit='萬', rank=1)
         ]
         self.assertFalse(self.rules.isNineGates(nineGates))
-    '''
+    
     def test_standardWinning(self):
         """
         Test for a standard winning hand.
@@ -285,7 +285,7 @@ class TestRules(unittest.TestCase):
             Card(suit='筒', rank=9), Card(suit='筒', rank=8)  # Pair
         ]
         self.assertFalse(self.rules.isStandardHand(standard_hand, []))
-    '''
+
     def test_isValidMeld(self):
         """
         Test for a valid meld.
@@ -327,7 +327,7 @@ class TestRules(unittest.TestCase):
         """
         invalid_pair = [Card(suit='萬', rank=1), Card(suit='萬', rank=2)]
         self.assertFalse(is_valid_pair(invalid_pair))
-
+    
     def test_breakIntoMeldsAndPair(self):
         """
         Test for breaking tiles into melds and a pair.
@@ -368,6 +368,6 @@ class TestRules(unittest.TestCase):
         ]
         ret, melds = break_into_melds_and_pair(tiles)
         self.assertFalse(ret)
-
+    
 if __name__ == '__main__':
     unittest.main()

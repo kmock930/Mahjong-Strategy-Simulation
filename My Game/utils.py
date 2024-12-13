@@ -94,8 +94,9 @@ def break_into_melds_and_pair(tiles: list[Card]) -> tuple[bool, list[list[Card]]
 '''
 def break_into_melds_and_pair(tiles: list[Card]) -> tuple[bool, list[list[Card]]]:
     """Break down tiles into 4 melds and a pair if possible."""
-    if len(tiles) < 14:
-        return False, []
+    # Case: only 1 pair remaining
+    if (len(tiles) == 2):
+        return is_valid_pair(tiles), [tiles];
 
     # Sort tiles for deterministic processing
     tiles.sort(key=lambda tile: (tile.suit, tile.rank))
@@ -110,20 +111,20 @@ def break_into_melds_and_pair(tiles: list[Card]) -> tuple[bool, list[list[Card]]
             remaining_tiles = tiles[:i] + tiles[i+2:]
             melds = []
 
-            # Attempt to find 4 melds in the remaining tiles
-            if find_melds(remaining_tiles, melds):
+            if (find_melds(remaining_tiles, melds)):
                 return True, melds + [pair]
 
             # Backtrack and try the next pair
-
+            continue
+    
     # If no valid pair leads to a solution
     return False, []
 
 def find_melds(tiles: list[Card], melds: list[list[Card]]) -> bool:
-    """Recursively find melds, including Kongs, in the remaining tiles."""
+    """Recursively find melds, including Kongs, in the remaining tiles.""" 
     if not tiles:
-        return len(melds) == 4  # Ensure exactly 4 melds are formed
-
+        return True
+           
     # Step 1: Check for Pongs and Kongs
     counter_tiles = Counter((tile.suit, tile.rank) for tile in tiles)
     for (suit, rank), count in counter_tiles.items():

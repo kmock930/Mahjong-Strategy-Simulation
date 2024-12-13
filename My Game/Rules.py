@@ -78,21 +78,21 @@ class Rules:
         '''
         Check if the tiles form a standard hand.
         '''
-        targetNumMeldInClosed = 4 - len(openDeck);
         ret: bool = False;
         
         tiles = closedDeck + [tile for meld in openDeck for tile in meld]
-        if (len(tiles) < 14):
+
+        if (len(tiles) < 14 and ((len(closedDeck)-2) % 3 != 0)):
             print("Not enough tiles to win.");
             return ret;
     
         ret, melds = break_into_melds_and_pair(closedDeck);
-        pair = melds[-1];
-        melds = melds[:-1];
+        pair = melds[-1] if ret == True else [];
+        melds = melds[:-1] + openDeck if ret == True else [];
 
         # not counting the last group (which is a pair)
-        return ret and len(melds) == targetNumMeldInClosed;
-                
+        return ret and len(melds) == 4 and len(pair) == 2;
+        
 
 
     ####################################################################

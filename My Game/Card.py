@@ -4,10 +4,12 @@ class Card:
     '''
     suit: str;
     rank: int | str;
+    toDisplay: bool = False;
 
     def __init__(self, suit: str, rank: int | str):
         self.suit = suit;
         self.rank = rank;
+        self.toDisplay = False;
 
     def __eq__(self, other):
         """Check if two cards are equal based on suit and rank."""

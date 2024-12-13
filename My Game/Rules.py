@@ -87,10 +87,12 @@ class Rules:
             return ret;
     
         ret, melds = break_into_melds_and_pair(closedDeck);
+
+        # not counting the last group (which is a pair)
         pair = melds[-1] if ret == True else [];
         melds = melds[:-1] + openDeck if ret == True else [];
 
-        # not counting the last group (which is a pair)
+        # Evaluate if hand matches the 5-block hypothesis
         return ret and len(melds) == 4 and len(pair) == 2;
         
 

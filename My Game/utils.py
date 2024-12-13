@@ -29,69 +29,7 @@ def is_valid_meld(meld: list[Card]) -> bool:
 def is_valid_pair(pair: list[Card]) -> bool:
     """Check if a pair is valid."""
     return len(pair) == 2 and pair[0].suit == pair[1].suit and pair[0].rank == pair[1].rank;
-'''
-def break_into_melds_and_pair(tiles: list[Card]) -> tuple[bool, list[list[Card]]]:
-    """Break down tiles into 4 melds and a pair if possible."""
-    if len(tiles) < 14:
-        return False, []
 
-    # sorting ensures deterministic outcome
-    tiles.sort(key=lambda tile: (tile.suit, tile.rank))
-
-    # Try each possible pair
-    for i in range(len(tiles) - 1):
-        print("Another pair")
-        if tiles[i].suit == tiles[i+1].suit and tiles[i].rank == tiles[i+1].rank:
-            # Found a pair
-            pair = [tiles[i], tiles[i+1]];
-                
-            # removing the pair from meld's consideration
-            remaining_tiles = tiles[:i] + tiles[i+2:]
-
-            if not is_valid_pair(pair):
-                continue;
-                
-            # check if the remaining tiles consists of melds
-            melds: list[list[Card]] = [];
-            counterTiles = Counter([(tile.suit, tile.rank) for tile in remaining_tiles]);
-
-            # Check for melds of 4 tiles (Kong) or 3 tiles (pong)
-            for (suit, rank), count in counterTiles.items():
-                if count >= 3:
-                    print("Pong: ", suit, rank);
-                    meld = [Card(suit, rank)] * 3; #disregard kong
-                    melds.append(meld);
-                    if (is_valid_meld(meld)):
-                        for _ in range(3):
-                            remaining_tiles.remove(Card(suit, rank))
-                        
-                
-            # Check for melds of 3 tiles in sequence (Chow)
-            for chosenTile in remaining_tiles.copy():
-                if (chosenTile.suit not in ('萬', '筒', '索')):
-                    continue;
-                possible_chow = [
-                    Card(chosenTile.suit, chosenTile.rank),
-                    Card(chosenTile.suit, chosenTile.rank + 1),
-                    Card(chosenTile.suit, chosenTile.rank + 2)
-                ]
-                if all(any(tile == chow_tile for tile in remaining_tiles) for chow_tile in possible_chow):
-                    melds.append(possible_chow)
-                    for possibleTile in possible_chow:
-                        remaining_tiles.remove(possibleTile)
-                    print("Melds: ", len(melds), len(melds[0]))
-                    print("Remaining Tiles: ", len(remaining_tiles));
-            for meld in melds:
-                for tile in meld:
-                    print(tile.suit, tile.rank);
-                print("next meld")
-            print("Remaining Tiles: ", len(remaining_tiles));
-            for tile in remaining_tiles:
-                print(tile.suit, tile.rank);
-            print("Pair: ", pair[0].suit, pair[0].rank, pair[1].suit, pair[1].rank);
-            return len(remaining_tiles) == 0, melds + [pair]
-    return False, [];
-'''
 def break_into_melds_and_pair(tiles: list[Card]) -> tuple[bool, list[list[Card]]]:
     """Break down tiles into 4 melds and a pair if possible."""
     # Case: only 1 pair remaining

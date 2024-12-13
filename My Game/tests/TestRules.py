@@ -369,5 +369,97 @@ class TestRules(unittest.TestCase):
         ret, melds = break_into_melds_and_pair(tiles)
         self.assertFalse(ret)
     
+    def test_isAllPongs(self):
+        """
+        Test for all pongs.
+        """
+        allPongs = [
+            Card(suit='萬', rank=1), Card(suit='萬', rank=1), Card(suit='萬', rank=1),  # Pong
+            Card(suit='筒', rank=2), Card(suit='筒', rank=2), Card(suit='筒', rank=2),  # Pong
+            Card(suit='索', rank=3), Card(suit='索', rank=3), Card(suit='索', rank=3),  # Pong
+            Card(suit='風', rank='東'), Card(suit='風', rank='東'), Card(suit='風', rank='東'),  # Pong
+            Card(suit='箭', rank='中'), Card(suit='箭', rank='中')  # Pair
+        ]
+        self.assertTrue(self.rules.isAllPongs(allPongs))
+
+    def test_isNotAllPongs(self):
+        """
+        Test for all pongs.
+        """
+        allPongs = [
+            Card(suit='萬', rank=1), Card(suit='萬', rank=1), Card(suit='萬', rank=1),  # Pong
+            Card(suit='筒', rank=2), Card(suit='筒', rank=2), Card(suit='筒', rank=2),  # Pong
+            Card(suit='索', rank=3), Card(suit='索', rank=3), Card(suit='索', rank=3),  # Pong
+            Card(suit='風', rank='東'), Card(suit='風', rank='東'), Card(suit='風', rank='東'),  # Pong
+            Card(suit='箭', rank='中'), Card(suit='箭', rank='發')  # Not a Pair
+        ]
+        self.assertFalse(self.rules.isAllPongs(allPongs))
+
+    def test_is_EighteenArhats(self):
+        """
+        Test for Eighteen Arhats hand.
+        """
+        eighteen_arhats = [
+            Card(suit='萬', rank=1), Card(suit='萬', rank=1), Card(suit='萬', rank=1), Card(suit='萬', rank=1),  # Kong
+            Card(suit='筒', rank=2), Card(suit='筒', rank=2), Card(suit='筒', rank=2), Card(suit='筒', rank=2),  # Kong
+            Card(suit='索', rank=3), Card(suit='索', rank=3), Card(suit='索', rank=3), Card(suit='索', rank=3), # Kong
+            Card(suit='風', rank='東'), Card(suit='風', rank='東'), Card(suit='風', rank='東'), Card(suit='風', rank='東'),  # Kong
+            Card(suit='箭', rank='中'), Card(suit='箭', rank='中')  # Pair
+        ]
+        self.assertTrue(self.rules.isEighteenArhats(eighteen_arhats))
+
+    def test_is_NotEighteenArhats(self):
+        """
+        Test for Eighteen Arhats hand.
+        """
+        eighteen_arhats = [
+            Card(suit='萬', rank=1), Card(suit='萬', rank=1), Card(suit='萬', rank=1), Card(suit='萬', rank=1),  # Kong
+            Card(suit='筒', rank=2), Card(suit='筒', rank=2), Card(suit='筒', rank=2), Card(suit='筒', rank=2),  # Kong
+            Card(suit='索', rank=3), Card(suit='索', rank=3), Card(suit='索', rank=3), Card(suit='索', rank=3), # Kong
+            Card(suit='風', rank='東'), Card(suit='風', rank='東'), Card(suit='風', rank='東'),  # Pong (a Failed Kong)
+            Card(suit='箭', rank='中'), Card(suit='箭', rank='中')  # Pair
+        ]
+        self.assertFalse(self.rules.isEighteenArhats(eighteen_arhats))
+
+    def test_isFourConcealed(self):
+        """
+        Test for Four Concealed Pongs hand.
+        """
+        closedDeck = [
+            Card(suit='萬', rank=1), Card(suit='萬', rank=1), Card(suit='萬', rank=1),  # Pong
+            Card(suit='筒', rank=2), Card(suit='筒', rank=2), Card(suit='筒', rank=2),  # Pong
+            Card(suit='索', rank=3), Card(suit='索', rank=3), Card(suit='索', rank=3),  # Pong
+            Card(suit='箭', rank='中'), Card(suit='箭', rank='中')  # Pair
+        ]
+        openDeck = [
+            [
+                Card(suit='風', rank='東'), Card(suit='風', rank='東'), Card(suit='風', rank='東'), Card(suit='風', rank='東')  # Secret Kong
+            ]
+        ]
+        for meld in openDeck:
+            for tile in meld:
+                self.assertFalse(tile.toDisplay)
+        self.assertTrue(self.rules.isFourConcealed(closedDeck, openDeck))
+
+    def test_isNotFourConcealed(self):
+        """
+        Test for Four Concealed Pongs hand.
+        """
+        closedDeck = [
+            Card(suit='萬', rank=1), Card(suit='萬', rank=1), Card(suit='萬', rank=1),  # Pong
+            Card(suit='筒', rank=2), Card(suit='筒', rank=2), Card(suit='筒', rank=2),  # Pong
+            Card(suit='索', rank=3), Card(suit='索', rank=3), Card(suit='索', rank=3),  # Pong
+            Card(suit='箭', rank='中'), Card(suit='箭', rank='中')  # Pair
+        ]
+        openDeck = [
+            [
+                Card(suit='萬', rank='1'), Card(suit='萬', rank='2'), Card(suit='萬', rank='3'), Card(suit='風', rank='東')  # Secret Kong
+            ]
+        ]
+        for meld in openDeck:
+            for tile in meld:
+                tile.toDisplay = True; # it is a Chow, so should be displayed
+        self.assertFalse(self.rules.isFourConcealed(closedDeck, openDeck))
+        
 if __name__ == '__main__':
     unittest.main()

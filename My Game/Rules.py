@@ -95,8 +95,6 @@ class Rules:
         # Evaluate if hand matches the 5-block hypothesis
         return ret and len(melds) == 4 and len(pair) == 2;
         
-
-
     ####################################################################
     # Special Hand Rules
     ####################################################################
@@ -212,3 +210,36 @@ class Rules:
                     (counterRank[1] == 3 and counterRank[9] == 3 and any(counterRank[rank] == 2 for rank in range(2, 9))) # pair at 2 to 8
                    );
         return False;
+
+    # 對對胡
+    def isAllPongs(self, tiles: list[Card]) -> bool:
+        '''
+        Check if the tiles form an all-pongs hand.
+        '''
+        counterTiles = Counter(tiles)
+        pairs = sum(1 for count in counterTiles.values() if count == 2);
+        pongs = sum(1 for count in counterTiles.values() if count == 3);
+        return pairs == 1 and pongs == 4
+    
+    # 十八羅漢
+    def isEighteenArhats(self, tiles: list[Card]) -> bool:
+        '''
+        Check if the tiles form an eighteen arhats hand.
+        '''
+        counterTiles = Counter(tiles)
+        pairs = sum(1 for count in counterTiles.values() if count == 2);
+        kongs = sum(1 for count in counterTiles.values() if count == 4);
+        return len(tiles) == 18 and pairs == 1 and kongs == 4;
+    
+    # 四暗刻
+    def isFourConcealed(self, closedDeck: list[Card], openDeck: list[list[Card]]) -> bool:
+        '''
+        Check if the tiles form a four concealed pongs hand.
+        '''
+        counterClosedTiles = Counter(closedDeck)
+        pairs = sum(1 for count in counterClosedTiles.values() if count == 2);
+        pongs = sum(1 for count in counterClosedTiles.values() if count == 3);
+        # count secret kongs
+        counterOpenTiles = Counter(tile for meld in openDeck for tile in meld if tile.toDisplay == False);
+        kongs = sum(1 for count in counterOpenTiles.values() if count == 4);
+        return pongs + kongs == 4 and pairs == 1;

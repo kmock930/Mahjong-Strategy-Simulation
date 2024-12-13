@@ -243,3 +243,33 @@ class Rules:
         counterOpenTiles = Counter(tile for meld in openDeck for tile in meld if tile.toDisplay == False);
         kongs = sum(1 for count in counterOpenTiles.values() if count == 4);
         return pongs + kongs == 4 and pairs == 1;
+
+    # 平胡
+    def isAllSequence(self, tiles: list[Card]) -> bool:
+        '''
+        Check if the tiles form an all-sequence hand.
+        '''
+        ret, melds = break_into_melds_and_pair(tiles)
+        if (not ret):
+            return False;
+
+        pair = melds[-1] if ret else []
+        if (len(pair) != 2 or pair[0].suit != pair[1].suit or pair[0].rank != pair[1].rank):
+            return False;
+        melds = melds[:-1] if ret else [];
+
+        # check if all melds are in sequence
+        for meld in melds[:-1]:
+            # Error checking
+            if (len(meld) != 3 or any(tile.suit not in ('萬', '筒', '索') for tile in meld)):
+                return False;
+            counterSuits = Counter(tile.suit for tile in meld);
+            if (len(counterSuits) != 1):
+                return False;
+            # Sort
+            meld.sort(key=lambda tile: tile.rank);
+            if (meld[0].rank + 1 != meld[1].rank and meld[1].rank + 1 != meld[2].rank):
+                return False;        
+        
+        # all sequences + 1 pair
+        return ret and len(tiles) == 14 and len(pair) == 2 and len(melds) == 4;

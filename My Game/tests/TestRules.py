@@ -460,6 +460,32 @@ class TestRules(unittest.TestCase):
             for tile in meld:
                 tile.toDisplay = True; # it is a Chow, so should be displayed
         self.assertFalse(self.rules.isFourConcealed(closedDeck, openDeck))
-        
+    
+    def test_isAllSequences(self):
+        """
+        Test for All Sequences hand.
+        """
+        allSequences = [
+            Card(suit='萬', rank=1), Card(suit='萬', rank=2), Card(suit='萬', rank=3),  # Sequence
+            Card(suit='筒', rank=4), Card(suit='筒', rank=5), Card(suit='筒', rank=6),  # Sequence
+            Card(suit='索', rank=7), Card(suit='索', rank=8), Card(suit='索', rank=9),  # Sequence
+            Card(suit='索', rank=7), Card(suit='索', rank=8), Card(suit='索', rank=9),  # Sequence
+            Card(suit='箭', rank='中'), Card(suit='箭', rank='中')  # Pair
+        ]
+        self.assertTrue(self.rules.isAllSequence(allSequences))
+
+    def test_isNotAllSequences(self):
+        """
+        Test for All Sequences hand.
+        """
+        allSequences = [
+            Card(suit='萬', rank=1), Card(suit='萬', rank=2), Card(suit='萬', rank=3),  # Sequence
+            Card(suit='筒', rank=4), Card(suit='筒', rank=5), Card(suit='筒', rank=6),  # Sequence
+            Card(suit='索', rank=7), Card(suit='索', rank=8), Card(suit='索', rank=9),  # Sequence
+            Card(suit='索', rank=7), Card(suit='索', rank=7), Card(suit='索', rank=7),  # Pong
+            Card(suit='箭', rank='中'), Card(suit='箭', rank='中')  # Pair
+        ]
+        self.assertFalse(self.rules.isAllSequence(allSequences))
+
 if __name__ == '__main__':
     unittest.main()

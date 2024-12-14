@@ -138,6 +138,27 @@ class Rules:
                     self.isWinning = True;
                     self.score += 13;
         
+        # Rules for additional points
+        # flower tiles
+        if (len(self.flowerDeck) == 0 or self.flowerDeck == None):
+            if (self.isWinning == True):
+                self.score += 1
+        elif (len(self.flowerDeck) < 7): # not 花胡
+            if (self.fullFlowerSet() == 0):
+                self.score += self.countRightFlower();
+            self.score += self.fullFlowerSet();
+        
+        # 門前清
+        if (self.noOpenTiles() == True 
+                and not self.isFourConcealed(self.closedDeck, self.openTile) 
+                and not self.isThirteenOrphans(self.closedDeck + [self.incomingTile])
+                and not self.isNineGates(self.closedDeck, self.openTile)
+                and not len(self.flowerDeck) >= 7
+        ):
+            self.score += 1;
+
+        # score is capped at upperScoreLimit if provided
+        # only the winner has a score
         return min(self.score, self.upperScoreLimit) if self.isWinning == True else None;
 
     def isStandardHand(self, closedDeck: list[Card], openDeck: list[list[Card]]) -> bool:
@@ -337,3 +358,42 @@ class Rules:
         
         # all sequences + 1 pair
         return ret and len(tiles) == 14 and len(pair) == 2 and len(melds) == 4;
+
+    ####################################################################
+    # Rules for additional points
+    ####################################################################
+    # Right Flower
+    def countRightFlower(self) -> int:
+        '''
+        Check if the tiles form a right flower hand.
+        '''
+        counterFlowers = 0
+        flower1 = ['春', '夏', '秋', '冬'];
+        flower2 = ['梅', '蘭', '竹', '菊'];
+        if (self.flowerDeck != None and len(self.flowerDeck) > 0):
+            for flower in self.flowerDeck:
+                if (flower.suit == '花' and flower1[self.currentPlayerId] == flower.rank):
+                    counterFlowers += 1;
+                if (flower.suit == '花' and flower2[self.currentPlayerId] == flower.rank):
+                    counterFlowers += 1;
+        return counterFlowers;
+
+    def fullFlowerSet(self) -> int:
+        '''
+        Check if the tiles form a full flower set.
+        Returns the number of full sets.
+        '''
+        flower1 = ['春', '夏', '秋', '冬'];
+        flower2 = ['梅', '蘭', '竹', '菊'];
+        counterFullSets = 0;
+        if (self.flowerDeck != None and len(self.flowerDeck) > 0):
+            flower1_count = sum(1 for flower in self.flowerDeck if flower.rank in flower1)
+            flower2_count = sum(1 for flower in self.flowerDeck if flower.rank in flower2)
+            counterFullSets = flower1_count // 4 + flower2_count // 4
+        return counterFullSets;
+
+    def noOpenTiles(self) -> bool:
+        '''
+        Check if the tiles form a no open tiles hand.
+        '''
+        return len(self.openTile) == 0 or (len(self.openTile) > 0 and all(tile.toDisplay == False for meld in self.openTile for tile in meld));

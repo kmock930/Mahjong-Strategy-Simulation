@@ -43,7 +43,7 @@ class TestEvalScore(unittest.TestCase):
         thirteen_orphans = [Card('萬', 1), Card('萬', 9), Card('筒', 1), Card('筒', 9), Card('索', 1), Card('索', 9),
                             Card('風', '東'), Card('風', '南'), Card('風', '西'), Card('風', '北'),
                             Card('箭', '中'), Card('箭', '發'), Card('箭', '白')]
-        rules = Rules(incomingTile=Card('萬', 1), closedDeck=thirteen_orphans, openDeck=[], incomingPlayerId=0, currentPlayerId=0)
+        rules = Rules(incomingTile=Card('萬', 1), closedDeck=thirteen_orphans, openDeck=[], flowerDeck=[Card('花', '夏')], incomingPlayerId=0, currentPlayerId=0)
         self.assertEqual(rules.evalScore(), 13)
 
     def test_winningwith0score(self):
@@ -54,12 +54,17 @@ class TestEvalScore(unittest.TestCase):
             Card('筒', 9), Card('筒', 9), Card('筒', 9),
             Card('萬', 2)
         ]
+        openDeck=[
+                [Card('萬', 6), Card('萬', 7), Card('萬', 8)]
+        ]
+        for meld in openDeck:
+            for tile in meld:
+                tile.toDisplay = True;
         rules = Rules(
             incomingTile=Card('萬', 2), 
             closedDeck=zero_score, 
-            openDeck=[
-                [Card('萬', 6), Card('萬', 7), Card('萬', 8)]
-            ], 
+            openDeck=openDeck, 
+            flowerDeck=[Card('花', '夏')],
             incomingPlayerId=0, currentPlayerId=0
         )
         self.assertEqual(rules.evalScore(),0)
@@ -67,16 +72,22 @@ class TestEvalScore(unittest.TestCase):
     def test_mixedterminals(self):
         # Case 6: Mixed Terminals
         mixed_terminals = [
-            Card('萬', 1), Card('萬', 1), 
-            Card('筒', 9), Card('筒', 9), Card('筒', 9), 
+            Card('萬', 1), Card('萬', 1),  
             Card('索', 1), Card('索', 1), Card('索', 1),
             Card('風', '東'), Card('風', '東'), Card('風', '東'), Card('風', '東'), 
             Card('箭', '中'), Card('箭', '中')
         ]
+        openDeck = [
+            [Card('筒', 9), Card('筒', 9), Card('筒', 9)]
+        ]
+        for meld in openDeck:
+            for tile in meld:
+                tile.toDisplay = True
         rules = Rules(
             incomingTile=Card('萬', 1), 
             closedDeck=mixed_terminals, 
-            openDeck=[], 
+            openDeck=openDeck, 
+            flowerDeck=[Card('花', '夏')],
             incomingPlayerId=0, currentPlayerId=0
         )
         self.assertEqual(rules.evalScore(), 6+3) # also a all pongs
@@ -89,12 +100,17 @@ class TestEvalScore(unittest.TestCase):
             Card('索', 1), Card('索', 1), Card('索', 1),
             Card('萬', 9)
         ]
+        openDeck = [
+                [Card('索', 9), Card('索', 9), Card('索', 9), Card('索', 9)]
+        ]
+        for meld in openDeck:
+            for tile in meld:
+                tile.toDisplay = True
         rules = Rules(
             incomingTile=Card('萬', 9), 
             closedDeck=pure_terminals, 
-            openDeck=[
-                [Card('索', 9), Card('索', 9), Card('索', 9), Card('索', 9)]
-            ], 
+            openDeck=openDeck, 
+            flowerDeck=[Card('花', '夏')],
             incomingPlayerId=0, currentPlayerId=0
         )
         self.assertEqual(rules.evalScore(), 10+3) # also a all pongs
@@ -107,12 +123,17 @@ class TestEvalScore(unittest.TestCase):
             Card('萬', 7), Card('萬', 9), # missing tile in chow
             Card('萬', 9),  Card('萬', 9)
         ]
+        openDeck = [
+            [Card('萬', 1), Card('萬', 2), Card('萬', 3)]
+        ]
+        for meld in openDeck:
+            for tile in meld:
+                tile.toDisplay = True
         rules = Rules(
             incomingTile=Card('萬', 8), 
             closedDeck=all_in_one_suit, 
-            openDeck=[
-                [Card('萬', 1), Card('萬', 2), Card('萬', 3)]
-            ], 
+            openDeck=openDeck, 
+            flowerDeck=[Card('花', '夏')],
             incomingPlayerId=0, currentPlayerId=0)
         self.assertEqual(rules.evalScore(), 7+1) # it is also a sequence
 
@@ -130,9 +151,10 @@ class TestEvalScore(unittest.TestCase):
                 [Card('風', '東'), Card('風', '東'), Card('風', '東'), Card('風', '東')],
                 [Card('風', '南'), Card('風', '南'), Card('風', '南')],
             ], 
+            flowerDeck=[Card('花', '夏')],
             incomingPlayerId=0, currentPlayerId=0
         )
-        self.assertEqual(rules.evalScore(), 8+3) # also a all pongs
+        self.assertEqual(rules.evalScore(), 8+3+1) # also a all pongs + 門前清
 
     def test_mixedsuit(self):
         # Case 12: Mixed Suit
@@ -147,9 +169,10 @@ class TestEvalScore(unittest.TestCase):
             incomingTile=Card('風', '東'), 
             closedDeck=mixed_suit, 
             openDeck=[], 
+            flowerDeck=[Card('花', '夏')],
             incomingPlayerId=0, currentPlayerId=0
         )
-        self.assertEqual(rules.evalScore(), 3)
+        self.assertEqual(rules.evalScore(), 3+1) # also 門前清
 
     def test_allpongs(self):
         # Case 13: All Pongs
@@ -159,15 +182,19 @@ class TestEvalScore(unittest.TestCase):
             Card('索', 3), Card('索', 3),
             Card('筒', 5), Card('筒', 5)
         ]
+        openDeck = [
+            [Card('萬', 4), Card('萬', 4), Card('萬', 4)]
+        ]
+        for meld in openDeck:
+            for tile in meld:
+                tile.toDisplay = True
         rules = Rules(
             incomingTile=Card('索', 3), 
             closedDeck=all_pongs, 
-            openDeck=[
-                [Card('萬', 4), Card('萬', 4), Card('萬', 4)]
-            ], 
+            openDeck=openDeck, 
             incomingPlayerId=0, currentPlayerId=0
         )
-        self.assertEqual(rules.evalScore(), 3)
+        self.assertEqual(rules.evalScore(), 3+1) # no flowers
 
     def test_bigdragon(self):
         # Case 14: Big Dragon
@@ -177,15 +204,19 @@ class TestEvalScore(unittest.TestCase):
             Card('萬', 1), Card('萬', 2), Card('萬', 3),
             Card('索', 1)
         ]
+        openDeck = [
+            [Card('箭', '白'), Card('箭', '白'), Card('箭', '白'), Card('箭', '白')]
+        ]
+        for meld in openDeck:
+            for tile in meld:
+                tile.toDisplay = True;
         rules = Rules(
             incomingTile=Card('索', 1), 
             closedDeck=big_dragon, 
-            openDeck=[
-                [Card('箭', '白'), Card('箭', '白'), Card('箭', '白'), Card('箭', '白')]
-            ], 
+            openDeck=openDeck, 
             incomingPlayerId=0, currentPlayerId=0
         )
-        self.assertEqual(rules.evalScore(), 8)
+        self.assertEqual(rules.evalScore(), 8+1) # no flowers
 
     def test_smalldragon(self):
         # Case 15: Small Dragon
@@ -195,15 +226,19 @@ class TestEvalScore(unittest.TestCase):
             Card('萬', 1), Card('萬', 3), # missing tile in chow
             Card('箭', '白'), Card('箭', '白')
         ]
+        openDeck = [
+                [Card('索', 1), Card('索', 1), Card('索', 1)]
+        ]
+        for meld in openDeck:
+            for tile in meld:
+                tile.toDisplay = True;
         rules = Rules(
             incomingTile=Card('萬', 2), 
             closedDeck=small_dragon, 
-            openDeck=[
-                [Card('索', 1), Card('索', 1), Card('索', 1)]
-            ], 
+            openDeck=openDeck, 
             incomingPlayerId=0, currentPlayerId=0
         )
-        self.assertEqual(rules.evalScore(), 5)
+        self.assertEqual(rules.evalScore(), 5+1) # no flowers
 
     def test_bigwinds(self):
         # Case 16: Big Winds
@@ -213,12 +248,17 @@ class TestEvalScore(unittest.TestCase):
             Card('風', '西'), Card('風', '西'), Card('風', '西'), 
             Card('筒', 8)
         ]
+        openDeck = [
+            [Card('風', '北'), Card('風', '北'), Card('風', '北'), Card('風', '北')]
+        ]
+        for meld in openDeck:
+            for tile in meld:
+                tile.toDisplay = True;
         rules = Rules(
             incomingTile=Card('筒', 8), 
             closedDeck=big_winds, 
-            openDeck=[
-                [Card('風', '北'), Card('風', '北'), Card('風', '北'), Card('風', '北')]
-            ], 
+            openDeck=openDeck, 
+            flowerDeck=[Card('花', '夏')],
             incomingPlayerId=0, currentPlayerId=0
         )
         self.assertEqual(rules.evalScore(), 13+3+3) # also a mixed suit and all pongs
@@ -231,12 +271,17 @@ class TestEvalScore(unittest.TestCase):
             Card('風', '西'), Card('風', '西'), Card('風', '西'), 
             Card('風', '北')
         ]
+        openDeck=[
+                [Card('筒', 8), Card('筒', 8), Card('筒', 8)]
+        ]
+        for meld in openDeck:
+            for tile in meld:
+                tile.toDisplay = True;
         rules = Rules(
             incomingTile=Card('風', '北'), 
             closedDeck=small_winds, 
-            openDeck=[
-                [Card('筒', 8), Card('筒', 8), Card('筒', 8)]
-            ], 
+            openDeck=openDeck, 
+            flowerDeck=[Card('花', '夏')],
             incomingPlayerId=0, currentPlayerId=0
         )
         self.assertEqual(rules.evalScore(), 6+3+3) # also a mixed suit and all pongs
@@ -247,10 +292,20 @@ class TestEvalScore(unittest.TestCase):
             Card('萬', 1), Card('萬', 2),  # Chow (missing one)
             Card('筒', 2), Card('筒', 3), Card('筒', 4),  # Chow
             Card('索', 4), Card('索', 5), Card('索', 6),  # Chow
-            Card('萬', 7), Card('萬', 8), Card('萬', 9),  # Chow
             Card('筒', 5), Card('筒', 5)  # Pair
         ]
-        rules = Rules(incomingTile=Card('萬', 3), closedDeck=all_sequence, openDeck=[], incomingPlayerId=0, currentPlayerId=0)
+        openDeck = [
+            [Card('萬', 7), Card('萬', 8), Card('萬', 9)]  # Chow
+        ]
+        for meld in openDeck:
+            for tile in meld:
+                tile.toDisplay = True
+        rules = Rules(
+            incomingTile=Card('萬', 3), 
+            closedDeck=all_sequence, 
+            openDeck=openDeck, 
+            flowerDeck=[Card('花', '春')],
+            incomingPlayerId=0, currentPlayerId=1)
         self.assertEqual(rules.evalScore(), 1)
 
     def test_ninegates(self):
@@ -259,7 +314,12 @@ class TestEvalScore(unittest.TestCase):
             Card('萬', 1), Card('萬', 1), Card('萬', 1), Card('萬', 2), Card('萬', 3), Card('萬', 4), Card('萬', 5),
             Card('萬', 6), Card('萬', 7), Card('萬', 8), Card('萬', 9), Card('萬', 9), Card('萬', 9), Card('萬', 5)
         ]
-        rules = Rules(incomingTile=Card('萬', 2), closedDeck=nine_gates, openDeck=[], incomingPlayerId=0, currentPlayerId=0)
+        rules = Rules(
+            incomingTile=Card('萬', 2), 
+            closedDeck=nine_gates, 
+            openDeck=[], 
+            flowerDeck=[Card('花', '夏')],
+            incomingPlayerId=0, currentPlayerId=0)
         self.assertEqual(rules.evalScore(), 10)
 
     def test_eighteen_arhats(self):
@@ -280,7 +340,7 @@ class TestEvalScore(unittest.TestCase):
             ], 
             incomingPlayerId=0, currentPlayerId=0
         )
-        self.assertEqual(rules.evalScore(), 13)
+        self.assertEqual(rules.evalScore(), 13+1+1) # no flowers + 門前清
 
     def test_upperscorelimit(self):
         # Case 20: Upper Score Limit
@@ -296,6 +356,8 @@ class TestEvalScore(unittest.TestCase):
             upperScoreLimit=upperScoreLimit
         )
         self.assertEqual(rules.evalScore(), upperScoreLimit)
+
+    
 
 if __name__ == '__main__':
     unittest.main()

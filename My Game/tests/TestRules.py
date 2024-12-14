@@ -486,5 +486,86 @@ class TestRules(unittest.TestCase):
             Card(suit='箭', rank='中'), Card(suit='箭', rank='中')  # Pair
         ]
         self.assertFalse(self.rules.isAllSequence(allSequences))
+
+    def test_countRightFlowers(self):
+        # Case 21: Count Right Flowers
+        rules = Rules(
+            incomingTile=None, 
+            closedDeck=[], 
+            openDeck=[], 
+            incomingPlayerId=3, 
+            currentPlayerId=1, 
+            flowerDeck=[Card('花', '春'), Card('花', '夏'), Card('花', '蘭')])
+        self.assertEqual(rules.countRightFlower(), 2)
+
+    def test_fullFlowerSet(self):
+        # Case 22: Full Flower Set
+        rules = Rules(
+            incomingTile=None, 
+            closedDeck=[], 
+            openDeck=[], 
+            incomingPlayerId=3, 
+            currentPlayerId=1, 
+            flowerDeck=[Card('花', i) for i in ['春', '夏', '秋', '冬']])
+        self.assertEqual(rules.fullFlowerSet(), 1)
+
+        rules = Rules(
+            incomingTile=None, 
+            closedDeck=[], 
+            openDeck=[], 
+            incomingPlayerId=3, 
+            currentPlayerId=1, 
+            flowerDeck=[Card('花', i) for i in ['春', '夏', '秋', '冬', '梅', '蘭', '竹', '菊']])
+        self.assertEqual(rules.fullFlowerSet(), 2)
+
+        # no full sets
+        rules = Rules(
+            incomingTile=None, 
+            closedDeck=[], 
+            openDeck=[], 
+            incomingPlayerId=3, 
+            currentPlayerId=1, 
+            flowerDeck=[Card('花', i) for i in ['春', '秋', '冬', '蘭', '竹']])
+        self.assertEqual(rules.fullFlowerSet(), 0)
+
+    def test_noOpenTiles(self):
+        """
+        Test for no open tiles.
+        """
+        closedDeck = [
+            Card(suit='萬', rank=1), Card(suit='萬', rank=2), Card(suit='萬', rank=3),  # Sequence
+            Card(suit='筒', rank=4), Card(suit='筒', rank=5), Card(suit='筒', rank=6),  # Sequence
+            Card(suit='索', rank=7), Card(suit='索', rank=8), Card(suit='索', rank=9),  # Sequence
+            Card(suit='索', rank=7), Card(suit='索', rank=8), Card(suit='索', rank=9),  # Sequence
+            Card(suit='箭', rank='中'), Card(suit='箭', rank='中')  # Pair
+        ]
+        rules = Rules(
+            incomingTile=None, 
+            closedDeck=closedDeck, 
+            openDeck=[], # no open tiles
+            incomingPlayerId=3, 
+            currentPlayerId=1, 
+            flowerDeck=[Card('花', '春'), Card('花', '夏'), Card('花', '蘭')]
+        )
+        self.assertTrue(rules.noOpenTiles())
+
+        closedDeck = [
+            Card(suit='萬', rank=1), Card(suit='萬', rank=2), Card(suit='萬', rank=3),  # Sequence
+            Card(suit='筒', rank=4), Card(suit='筒', rank=5), Card(suit='筒', rank=6),  # Sequence
+            Card(suit='索', rank=7), Card(suit='索', rank=8), Card(suit='索', rank=9),  # Sequence
+            Card(suit='箭', rank='中'), Card(suit='箭', rank='中')  # Pair
+        ]
+        rules = Rules(
+            incomingTile=None, 
+            closedDeck=closedDeck, 
+            openDeck=[
+                [Card('索', 1), Card('索', 1), Card('索', 1), Card('索', 1)], #  secret kong
+            ],
+            incomingPlayerId=3, 
+            currentPlayerId=1, 
+            flowerDeck=[Card('花', '春'), Card('花', '夏'), Card('花', '蘭')]
+        )
+        self.assertTrue(rules.noOpenTiles())
+
 if __name__ == '__main__':
     unittest.main()

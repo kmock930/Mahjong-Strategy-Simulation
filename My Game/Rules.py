@@ -138,7 +138,7 @@ class Rules:
                     self.isWinning = True;
                     self.score += 13;
         
-        return self.score if self.isWinning == True else None;
+        return min(self.score, self.upperScoreLimit) if self.isWinning == True else None;
 
     def isStandardHand(self, closedDeck: list[Card], openDeck: list[list[Card]]) -> bool:
         '''

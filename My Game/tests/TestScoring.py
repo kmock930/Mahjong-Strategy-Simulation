@@ -282,5 +282,20 @@ class TestEvalScore(unittest.TestCase):
         )
         self.assertEqual(rules.evalScore(), 13)
 
+    def test_upperscorelimit(self):
+        # Case 20: Upper Score Limit
+        upperScoreLimit = 11
+        thirteen_orphans = [Card('萬', 1), Card('萬', 9), Card('筒', 1), Card('筒', 9), Card('索', 1), Card('索', 9),
+                            Card('風', '東'), Card('風', '南'), Card('風', '西'), Card('風', '北'),
+                            Card('箭', '中'), Card('箭', '發'), Card('箭', '白')]
+        rules = Rules(
+            incomingTile=Card('萬', 1), 
+            closedDeck=thirteen_orphans, 
+            openDeck=[], 
+            incomingPlayerId=0, currentPlayerId=0, 
+            upperScoreLimit=upperScoreLimit
+        )
+        self.assertEqual(rules.evalScore(), upperScoreLimit)
+
 if __name__ == '__main__':
     unittest.main()

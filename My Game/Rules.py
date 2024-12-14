@@ -1,7 +1,7 @@
 from player import Player;
 from Card import Card;
 from collections import Counter
-from utils import break_into_melds_and_pair
+from utils import break_into_melds_and_pair, is_valid_pair
 import math;
 
 class Rules:
@@ -9,9 +9,10 @@ class Rules:
     Mahjong Rules
     '''
     score = 0;
+    upperScoreLimit = math.inf;
     incomingTile: Card = None;
     closedDeck: list[Card] = [];
-    openTile: list[Card] = [];
+    openTile: list[list[Card]] = [];
     incomingPlayerId: int = 0;
     currentPlayerId: int = 0;
     flowerDeck:list[Card] = [];
@@ -26,14 +27,16 @@ class Rules:
     @param incomingPlayerId: int
     @param currentPlayerId: int
     '''
-    def __init__(self, incomingTile: Card, closedDeck: list[Card], openDeck: list[Card], incomingPlayerId: int, currentPlayerId: int, flowerDeck: list[Card] = None):
+    def __init__(self, incomingTile: Card, closedDeck: list[Card], openDeck: list[list[Card]], incomingPlayerId: int, currentPlayerId: int, flowerDeck: list[Card] = None, upperScoreLimit: float = math.inf):
         self.flowerDeck = flowerDeck if flowerDeck != None else [];
         self.incomingTile = incomingTile;
         self.incomingPlayerId = incomingPlayerId;
+        self.closedDeck = closedDeck;
         self.openTile = openDeck;
         self.incomingPlayerId = incomingPlayerId;
         self.currentPlayerId = currentPlayerId;
         self.resDeck = closedDeck + openDeck + [incomingTile];
+        self.upperScoreLimit = upperScoreLimit;
 
     def evalScore(self) -> int|float|None:
         '''
@@ -45,33 +48,96 @@ class Rules:
             self.score += 3;
             self.isWinning = True;
         if (len(self.flowerDeck) == 8):
-            self.score += math.inf;
+            self.score += self.upperScoreLimit;
             self.isWinning = True;
 
         # check for a special hand
-        specialHand: list[Card] = self.closedDeck + [self.incomingTile];
-        if (len(specialHand) != 14):
-            self.isWinning = False;
+        totalTiles: list[Card] = self.closedDeck + [self.incomingTile] + [tile for meld in self.openTile for tile in meld];
+        if (len(totalTiles) < 14 or len(totalTiles) > 18):
+            if (len(self.flowerDeck)< 7):
+                self.isWinning = False;
         else:
+            # Special Case
             # 十三幺
-            if (self.isThirteenOrphans(specialHand)):
+            # only count hand tiles and the incoming tile
+            if (self.isThirteenOrphans(self.closedDeck + [self.incomingTile])):
                 self.score += 13;
                 self.isWinning = True;
-            
-            if (self.isPureTerminals(specialHand)):
-                self.score += 1;
-                self.isWinning = True;
-            
-            if (self.isMixedTerminals(specialHand)):
-                self.score += 1;
-                self.isWinning = True;
+            else:
+                # normal hand
+                if (self.isStandardHand(self.closedDeck + [self.incomingTile], self.openTile)):
+                    self.isWinning = True;
+                    # winning with no points
+                
+                # Special Patterns
+                # 么九
+                if (self.isMixedTerminals(totalTiles)):
+                    self.isWinning = True;
+                    if (self.isPureTerminals(totalTiles)):
+                        self.score += 10;
+                    else:
+                        if (not self.isAllHonors(totalTiles)):
+                            self.score += 6;
 
-            # special rules that add 1 point
-            if (self.isWinning == True and self.incomingPlayerId == self.currentPlayerId):
-                self.score += 1;
-            if (len(self.openDeck)==0):
-                self.score += 1;
-    
+                # 清一色
+                if (self.isAllOneSuit(totalTiles) and not self.isAllHonors(totalTiles)):
+                    self.isWinning = True;
+                    if (self.isNineGates(self.closedDeck, self.openTile)):
+                        # 九指連環
+                        self.isWinning = True;
+                        self.score += 10;
+                    else:
+                        if (self.isEighteenArhats(totalTiles) == True):
+                            # 十八羅漢 - handle later
+                            pass
+                        else:
+                            # 清一色 - 萬 筒 索
+                            self.score += 7;
+                
+                if (self.isAllHonors(totalTiles)):
+                    # 字一色
+                    self.score += 8;
+
+                # 混一色
+                if (self.isMixedSuit(totalTiles)):
+                    self.isWinning = True;
+                    self.score += 3;
+
+                # 對對胡
+                if (self.isAllPongs(totalTiles)):
+                    self.isWinning = True;
+                    if (self.isFourConcealed(self.closedDeck, self.openTile)):
+                        # 四暗刻
+                        self.score += math.inf;
+                    else: 
+                        self.score += 3;
+
+                # 平胡
+                if (self.isAllSequence(totalTiles)):
+                    self.isWinning = True;
+                    self.score += 1;
+
+                # 三元
+                if (self.isBigThreeDragons(totalTiles)):
+                    self.isWinning = True;
+                    self.score += 8;
+                elif (self.isSmallThreeDragons(totalTiles)):
+                    self.isWinning = True;
+                    self.score += 5;
+
+                # 四喜
+                if (self.isBigFourWinds(totalTiles)):
+                    self.isWinning = True;
+                    self.score += 13;
+                elif (self.isSmallFourWinds(totalTiles)):
+                    self.isWinning = True;
+                    self.score += 6;
+                
+                # 十八羅漢
+                if (self.isEighteenArhats(totalTiles)):
+                    self.isWinning = True;
+                    self.score += 13;
+        
         return self.score if self.isWinning == True else None;
 
     def isStandardHand(self, closedDeck: list[Card], openDeck: list[list[Card]]) -> bool:
@@ -192,18 +258,18 @@ class Rules:
         return len(suits) == 1 and has_honors and len(tiles) >= 14;
 
     # 九指連環
-    def isNineGates(self, tiles: list[Card]) -> bool:
+    def isNineGates(self, closedDeck: list[Card], openDeck: list[list[Card]]) -> bool:
         '''
         Check if the tiles form a nine gates hand.
         '''
-        if (len(tiles) < 14):
+        if (len(closedDeck) < 14 or len(openDeck) > 0):
             return False;
     
-        counterSuits = Counter(tile.suit for tile in tiles if tile.suit in ('萬', '筒', '索'));
+        counterSuits = Counter(tile.suit for tile in closedDeck if tile.suit in ('萬', '筒', '索'));
         if (len(counterSuits) != 1):
             return False;
 
-        counterRank = Counter(tile.rank for tile in tiles if tile.suit in ('萬', '筒', '索'));
+        counterRank = Counter(tile.rank for tile in closedDeck if tile.suit in ('萬', '筒', '索'));
         if all(rank in counterRank for rank in range(1, 10)):
             return ((counterRank[1] == 4 and counterRank[9] == 3 and all(counterRank[rank] == 1 for rank in range(2, 9))) or # pair at 9
                     (counterRank[9] == 4 and counterRank[1] == 3 and all(counterRank[rank] == 1 for rank in range(2, 9))) or # pair at 1
@@ -219,17 +285,15 @@ class Rules:
         counterTiles = Counter(tiles)
         pairs = sum(1 for count in counterTiles.values() if count == 2);
         pongs = sum(1 for count in counterTiles.values() if count == 3);
-        return pairs == 1 and pongs == 4
+        kongs = sum(1 for count in counterTiles.values() if count == 4);
+        return pairs == 1 and pongs + kongs == 4 and kongs < 4;
     
     # 十八羅漢
     def isEighteenArhats(self, tiles: list[Card]) -> bool:
         '''
         Check if the tiles form an eighteen arhats hand.
         '''
-        counterTiles = Counter(tiles)
-        pairs = sum(1 for count in counterTiles.values() if count == 2);
-        kongs = sum(1 for count in counterTiles.values() if count == 4);
-        return len(tiles) == 18 and pairs == 1 and kongs == 4;
+        return len(tiles) == 18 
     
     # 四暗刻
     def isFourConcealed(self, closedDeck: list[Card], openDeck: list[list[Card]]) -> bool:

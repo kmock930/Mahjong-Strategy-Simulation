@@ -245,7 +245,7 @@ class TestRules(unittest.TestCase):
             Card(suit='萬', rank=9), Card(suit='萬', rank=9), Card(suit='萬', rank=9),
             Card(suit='萬', rank=1)
         ]
-        self.assertTrue(self.rules.isNineGates(nineGates))
+        self.assertTrue(self.rules.isNineGates(nineGates, []))
 
     def test_isNotNineGates(self):
         nineGates = [
@@ -256,7 +256,7 @@ class TestRules(unittest.TestCase):
             Card(suit='萬', rank=9), Card(suit='萬', rank=9), Card(suit='萬', rank=9),
             Card(suit='萬', rank=1)
         ]
-        self.assertFalse(self.rules.isNineGates(nineGates))
+        self.assertFalse(self.rules.isNineGates(nineGates, []))
     
     def test_standardWinning(self):
         """
@@ -486,6 +486,5 @@ class TestRules(unittest.TestCase):
             Card(suit='箭', rank='中'), Card(suit='箭', rank='中')  # Pair
         ]
         self.assertFalse(self.rules.isAllSequence(allSequences))
-
 if __name__ == '__main__':
     unittest.main()

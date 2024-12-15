@@ -1,7 +1,6 @@
-from player import Player;
 from Card import Card;
 from collections import Counter
-from utils import break_into_melds_and_pair, is_valid_pair
+from utils import break_into_melds_and_pair
 import math;
 
 class Rules:

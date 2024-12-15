@@ -15,6 +15,7 @@ class Rules:
     openTile: list[list[Card]] = [];
     incomingPlayerId: int = 0;
     currentPlayerId: int = 0;
+    gameID: int = 0;
     flowerDeck:list[Card] = [];
     resDeck:list[Card] = [];
     isWinning = False;
@@ -27,7 +28,7 @@ class Rules:
     @param incomingPlayerId: int
     @param currentPlayerId: int
     '''
-    def __init__(self, incomingTile: Card, closedDeck: list[Card], openDeck: list[list[Card]], incomingPlayerId: int, currentPlayerId: int, flowerDeck: list[Card] = None, upperScoreLimit: float = math.inf):
+    def __init__(self, incomingTile: Card, closedDeck: list[Card], openDeck: list[list[Card]], incomingPlayerId: int, currentPlayerId: int, flowerDeck: list[Card] = None, upperScoreLimit: float = math.inf, gameID: int = 0):
         self.flowerDeck = flowerDeck if flowerDeck != None else [];
         self.incomingTile = incomingTile;
         self.incomingPlayerId = incomingPlayerId;
@@ -37,6 +38,7 @@ class Rules:
         self.currentPlayerId = currentPlayerId;
         self.resDeck = closedDeck + openDeck + [incomingTile];
         self.upperScoreLimit = upperScoreLimit;
+        self.gameID = gameID;
 
     def evalScore(self) -> int|float|None:
         '''
@@ -44,6 +46,8 @@ class Rules:
         @return int|float|None
         '''
         # check for flower tiles
+        if (self.incomingTile != None and self.incomingTile.suit == '花'):
+            self.flowerDeck.append(self.incomingTile);
         if (len(self.flowerDeck) == 7):
             self.score += 3;
             self.isWinning = True;
@@ -140,13 +144,14 @@ class Rules:
         
         # Rules for additional points
         # flower tiles
-        if (len(self.flowerDeck) == 0 or self.flowerDeck == None):
+        if (self.flowerDeck == None or len(self.flowerDeck) == 0):
             if (self.isWinning == True):
                 self.score += 1
         elif (len(self.flowerDeck) < 7): # not 花胡
-            if (self.fullFlowerSet() == 0):
-                self.score += self.countRightFlower();
-            self.score += self.fullFlowerSet();
+            if (self.isWinning == True):
+                if (self.fullFlowerSet() == 0):
+                    self.score += self.countRightFlower();
+                self.score += self.fullFlowerSet();
         
         # 門前清
         if (self.noOpenTiles() == True 
@@ -154,8 +159,18 @@ class Rules:
                 and not self.isThirteenOrphans(self.closedDeck + [self.incomingTile])
                 and not self.isNineGates(self.closedDeck, self.openTile)
                 and not len(self.flowerDeck) >= 7
+                and (self.incomingTile is not None and not self.incomingTile.suit == '花')
+                and self.isWinning == True
         ):
             self.score += 1;
+        
+        # Wind
+        self.score += self.countRightWind();
+
+        # 自摸
+        if (self.incomingPlayerId == self.currentPlayerId):
+            if ((len(self.flowerDeck) < 7)):
+                self.score += 1;
 
         # score is capped at upperScoreLimit if provided
         # only the winner has a score
@@ -397,3 +412,70 @@ class Rules:
         Check if the tiles form a no open tiles hand.
         '''
         return len(self.openTile) == 0 or (len(self.openTile) > 0 and all(tile.toDisplay == False for meld in self.openTile for tile in meld));
+
+    def countRightWind(self) -> int:
+        '''
+        Count the melds of matching winds in a hand.
+        '''
+        total_tiles = self.closedDeck + [self.incomingTile] + [tile for meld in self.openTile for tile in meld]
+        if (self.isBigFourWinds(total_tiles)
+            or self.isSmallFourWinds(total_tiles)
+        ):
+            # never count those points twice
+            return 0;
+
+        counterWinds: int = 0;
+
+        ret, melds = break_into_melds_and_pair(self.closedDeck + [self.incomingTile]);
+        if (not ret):
+            return 0;
+        melds = melds[:-1] if ret else [];
+
+        winds = ['東', '南', '西', '北'];
+        # closed tiles
+        for meld in melds:
+            if (len(meld) < 3):
+                continue;
+            # seat wind
+            if (all(tile.suit == '風' for tile in meld)
+                and len(set(tile.rank for tile in meld)) == 1 
+                and all(tile.rank == winds[self.currentPlayerId] for tile in meld)
+            ):
+                counterWinds += 1;
+            # prevailing wind
+            if (all(tile.suit == '風' for tile in meld)
+                and len(set(tile.rank for tile in meld)) == 1 
+                and all(tile.rank == winds[self.gameID] for tile in meld)
+            ):
+                counterWinds += 1;
+            # 中發白
+            if (all(tile.suit == '箭' for tile in meld) 
+                and len(set(tile.rank for tile in meld)) == 1
+                and not self.isSmallThreeDragons(self.closedDeck + [self.incomingTile] + [tile for meld in self.openTile for tile in meld])
+                and not self.isBigThreeDragons(self.closedDeck + [self.incomingTile] + [tile for meld in self.openTile for tile in meld])
+            ):
+                counterWinds += 1;
+        
+        # open tiles
+        for meld in self.openTile:
+            # seat wind
+            if (all(tile.suit == '風' for tile in meld)
+                and len(set(tile.rank for tile in meld)) == 1 
+                and all(tile.rank == winds[self.currentPlayerId] for tile in meld)
+            ):
+                counterWinds += 1;
+            # prevailing wind
+            if (all(tile.suit == '風' for tile in meld)
+                and len(set(tile.rank for tile in meld)) == 1
+                and all(tile.rank == winds[self.gameID] for tile in meld)
+            ):
+                counterWinds += 1;
+            # 中發白
+            if (all(tile.suit == '箭' for tile in meld) 
+                and len(set(tile.rank for tile in meld)) == 1
+                and not self.isSmallThreeDragons(self.closedDeck + [self.incomingTile] + [tile for meld in self.openTile for tile in meld])
+                and not self.isBigThreeDragons(self.closedDeck + [self.incomingTile] + [tile for meld in self.openTile for tile in meld])
+            ):
+                counterWinds += 1;
+
+        return counterWinds;

@@ -567,5 +567,63 @@ class TestRules(unittest.TestCase):
         )
         self.assertTrue(rules.noOpenTiles())
 
+    def test_countRightWind(self):
+        # Case 23: Count Right Wind
+        closedDeck = [
+            Card(suit='風', rank='東'), Card(suit='風', rank='東'), Card(suit='風', rank='東'),
+            Card(suit='風', rank='南'), Card(suit='風', rank='南'), Card(suit='風', rank='南'),
+            Card(suit='風', rank='西'), Card(suit='風', rank='西'), Card(suit='風', rank='西'),
+            Card(suit='箭', rank='發'), Card(suit='箭', rank='發'),
+            Card(suit='箭', rank='中'), Card(suit='箭', rank='中')
+        ]
+        rules = Rules(
+            incomingTile=Card(suit='箭', rank='發'), 
+            closedDeck=closedDeck, 
+            openDeck=[], 
+            incomingPlayerId=3, 
+            currentPlayerId=1, 
+            gameID=1
+        )
+        self.assertEqual(rules.countRightWind(), 3)
+        ############################
+        closedDeck = [
+            Card(suit='萬', rank=1), Card(suit='萬', rank=1), Card(suit='萬', rank=1),
+            Card(suit='風', rank='西'), Card(suit='風', rank='西'), Card(suit='風', rank='西'),
+            Card(suit='風', rank='北'), Card(suit='風', rank='北'),
+            Card(suit='箭', rank='中'), Card(suit='箭', rank='中')
+        ]
+        openDeck = [
+                [Card(suit='風', rank='東'), Card(suit='風', rank='東'), Card(suit='風', rank='東'), Card(suit='風', rank='東')]
+        ]
+        for meld in openDeck:
+            for tile in meld:
+                tile.toDisplay = True
+        rules = Rules(
+            incomingTile=Card(suit='風', rank='北'), 
+            closedDeck=closedDeck, 
+            openDeck=openDeck, 
+            incomingPlayerId=3, 
+            currentPlayerId=1,
+            gameID=0
+        )
+        self.assertEqual(rules.countRightWind(), 1)
+        ############################
+        closedDeck = [
+            Card(suit='萬', rank=1), Card(suit='萬', rank=1),
+            Card(suit='風', rank='西'), Card(suit='風', rank='西'), Card(suit='風', rank='西'),
+            Card(suit='風', rank='北'), Card(suit='風', rank='北'),
+            Card(suit='箭', rank='中'), Card(suit='箭', rank='中'), Card(suit='箭', rank='中')
+        ]
+        rules = Rules(
+            incomingTile=Card(suit='風', rank='北'), 
+            closedDeck=closedDeck, 
+            openDeck=[
+                [Card(suit='風', rank='東'), Card(suit='風', rank='東'), Card(suit='風', rank='東'), Card(suit='風', rank='東')]
+            ], 
+            incomingPlayerId=3, 
+            currentPlayerId=1, 
+            gameID=0
+        )
+        self.assertEqual(rules.countRightWind(), 2)
 if __name__ == '__main__':
     unittest.main()

@@ -2,7 +2,6 @@ import unittest
 import sys
 sys.path.append('My Game')
 from Card import Card
-from utils import find_possible_melds
 from ShangtingPlayer import ShangTingPlayer
 
 class TestFindJoker(unittest.TestCase):

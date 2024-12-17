@@ -16,7 +16,6 @@ class Rules:
     currentPlayerId: int = 0;
     gameID: int = 0;
     flowerDeck:list[Card] = [];
-    resDeck:list[Card] = [];
     isWinning = False;
 
     '''
@@ -35,15 +34,29 @@ class Rules:
         self.openTile = openDeck;
         self.incomingPlayerId = incomingPlayerId;
         self.currentPlayerId = currentPlayerId;
-        self.resDeck = closedDeck + openDeck + [incomingTile];
         self.upperScoreLimit = upperScoreLimit;
         self.gameID = gameID;
 
-    def evalScore(self) -> int|float|None:
+    def evalScore(self, isFirstRound: bool = False, isLastPlayer: bool = False) -> int|float|None:
         '''
         Evaluates the score of a winning hand, None means not winning.
         @return int|float|None
         '''
+        if (isFirstRound == True):
+            # 天胡
+            if (len(self.closedDeck) == 14 and self.incomingTile == None):
+                self.isWinning = True;
+                self.score += math.inf;
+                return min(self.upperScoreLimit, math.inf);
+            # 地胡
+            if (len(self.closedDeck) == 13 and self.incomingTile != None and self.isStandardHand(
+                closedDeck=self.closedDeck + [self.incomingTile],
+                openDeck=[]
+            )):
+                self.isWinning = True;
+                self.score += math.inf;
+                return min(self.upperScoreLimit, math.inf);
+
         # check for flower tiles
         if (self.incomingTile != None and self.incomingTile.suit == '花'):
             self.flowerDeck.append(self.incomingTile);
@@ -167,9 +180,13 @@ class Rules:
         self.score += self.countRightWind();
 
         # 自摸
-        if (self.incomingPlayerId == self.currentPlayerId):
+        if (self.incomingPlayerId == self.currentPlayerId and not isLastPlayer):
             if ((len(self.flowerDeck) < 7)):
                 self.score += 1;
+        
+        # 海底撈月
+        if (isLastPlayer and self.isWinning):
+            self.score += 1;
 
         # score is capped at upperScoreLimit if provided
         # only the winner has a score

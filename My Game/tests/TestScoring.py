@@ -391,7 +391,112 @@ class TestEvalScore(unittest.TestCase):
         )
         self.assertEqual(rules.evalScore(), upperScoreLimit)
 
-    
+    def test_tian_hu(self):
+        """Test Heavenly Win (天胡): Player wins without drawing any tile."""
+        closedDeck = [
+            Card(suit='萬', rank=1), Card(suit='萬', rank=1), Card(suit='萬', rank=1),  # Pong
+            Card(suit='筒', rank=2), Card(suit='筒', rank=3), Card(suit='筒', rank=4),  # Chow
+            Card(suit='索', rank=5), Card(suit='索', rank=6), Card(suit='索', rank=7),  # Chow
+            Card(suit='風', rank='東'), Card(suit='風', rank='東'), Card(suit='風', rank='東'),  # Pong
+            Card(suit='筒', rank=1), Card(suit='筒', rank=1)  # Pair
+        ]
+        rules = Rules(
+            incomingTile=None,  # No tile drawn
+            closedDeck=closedDeck,
+            openDeck=[],
+            incomingPlayerId=0,
+            currentPlayerId=0
+        )
+        rules.evalScore(isFirstRound=True)
+        self.assertTrue(rules.isWinning)
+        self.assertEqual(rules.score, float('inf'))
+
+    def test_di_hu(self):
+        """Test Earthly Win (地胡): Player wins immediately after drawing the first tile."""
+        closedDeck = [
+            Card(suit='萬', rank=1), Card(suit='萬', rank=1), Card(suit='萬', rank=1),  # Pong
+            Card(suit='筒', rank=2), Card(suit='筒', rank=3), Card(suit='筒', rank=4),  # Chow
+            Card(suit='索', rank=5), Card(suit='索', rank=6), Card(suit='索', rank=7),  # Chow
+            Card(suit='風', rank='東'), Card(suit='風', rank='東'), Card(suit='風', rank='東'),  # Pong
+            Card(suit='筒', rank=1)
+        ]
+        incomingTile = Card(suit='筒', rank=1)  # Drawn tile completes the hand
+        rules = Rules(
+            incomingTile=incomingTile,
+            closedDeck=closedDeck,
+            openDeck=[],
+            incomingPlayerId=0,
+            currentPlayerId=0
+        )
+        rules.evalScore(isFirstRound=True)
+        self.assertTrue(rules.isWinning)
+        self.assertEqual(rules.score, float('inf'))
+
+    def test_hai_di_lao_yue(self):
+        """Test Last Tile Win (海底撈月): Player wins on the last tile."""
+        closedDeck = [
+            Card(suit='萬', rank=1), Card(suit='萬', rank=1), Card(suit='萬', rank=1),  # Pong
+            Card(suit='筒', rank=2), Card(suit='筒', rank=3), Card(suit='筒', rank=4),  # Chow
+            Card(suit='索', rank=5), Card(suit='索', rank=6), Card(suit='索', rank=7),  # Chow
+            Card(suit='筒', rank=9)
+        ]
+        incomingTile = Card(suit='筒', rank=9)  # Winning tile
+        openDeck = [
+                [Card(suit='風', rank='南'), Card(suit='風', rank='南'), Card(suit='風', rank='南')]
+        ]
+        for meld in openDeck:
+            for tile in meld:
+                tile.toDisplay = True
+        rules = Rules(
+            incomingTile=incomingTile,
+            closedDeck=closedDeck,
+            openDeck=openDeck,
+            incomingPlayerId=3,
+            currentPlayerId=3,
+            flowerDeck=[Card('花', '春')],
+        )
+        rules.isWinning = True  # Manually mark the hand as winning for this test
+        rules.evalScore(isLastPlayer=True)
+        self.assertTrue(rules.isWinning)
+        self.assertEqual(rules.score, 1)
+
+    def test_invalid_tian_hu(self):
+        """Test invalid Heavenly Win: Player has 14 tiles but it's not the first round."""
+        closedDeck = [
+            Card(suit='萬', rank=1), Card(suit='萬', rank=1), Card(suit='萬', rank=1),
+            Card(suit='筒', rank=2), Card(suit='筒', rank=3), Card(suit='筒', rank=4),
+            Card(suit='索', rank=5), Card(suit='索', rank=6), Card(suit='索', rank=7),
+            Card(suit='風', rank='東'), Card(suit='風', rank='東'), Card(suit='風', rank='東'),
+            Card(suit='筒', rank=1)
+        ]
+        rules = Rules(
+            incomingTile=Card(suit='筒', rank=2),
+            closedDeck=closedDeck,
+            openDeck=[],
+            incomingPlayerId=0,
+            currentPlayerId=0
+        )
+        rules.evalScore(isFirstRound=False)
+        self.assertFalse(rules.isWinning)
+
+    def test_invalid_di_hu(self):
+        """Test invalid Earthly Win: Player draws a tile but doesn't complete a hand."""
+        closedDeck = [
+            Card(suit='萬', rank=1), Card(suit='萬', rank=1), Card(suit='萬', rank=1),
+            Card(suit='筒', rank=2), Card(suit='筒', rank=3), Card(suit='筒', rank=4),
+            Card(suit='索', rank=5), Card(suit='索', rank=6), Card(suit='索', rank=7),
+            Card(suit='風', rank='東'), Card(suit='風', rank='東'), Card(suit='風', rank='東')
+        ]
+        incomingTile = Card(suit='筒', rank=2)  # Tile does not complete the hand
+        rules = Rules(
+            incomingTile=incomingTile,
+            closedDeck=closedDeck,
+            openDeck=[],
+            incomingPlayerId=0,
+            currentPlayerId=0
+        )
+        rules.evalScore(isFirstRound=False)
+        self.assertFalse(rules.isWinning)
 
 if __name__ == '__main__':
     unittest.main()

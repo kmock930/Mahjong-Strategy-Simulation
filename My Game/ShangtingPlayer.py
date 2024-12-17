@@ -1,21 +1,42 @@
 from player import Player;
-from Rules import Rules;
 from Card import Card;
 from gameLog import GameLog;
 from utils import break_into_melds_and_pair, find_jokers;
-from collections import Counter;
 
 class ShangTingPlayer(Player):
     def __init__(self, Id: int, wind: str, hand: list='東', logger: GameLog = None):
         super().__init__(Id, wind, hand, logger)
-        self.rules = Rules()
-        self.shangting = False
 
-    def discard(self, tile: Card):
-        super().discard(tile)
-        if self.rules.isShangTing(self.hand):
-            self.shangting = True
-        return tile
+    def discard(self):
+        originalLength = len(self.hand)
+        originalHand = self.hand.copy()
+        # strategy
+        def minimizeShangTing(deck: list[Card]):
+            targetTile: Card = deck[-1] # discard the new tile by default
+            shangTingDist = ShangTingPlayer.evalShangTing(deck.copy()) # init
+            for tile in deck:
+                hypotheticalDeck = deck.copy()
+                hypotheticalDeck.remove(tile)
+                hypotheticalDist = ShangTingPlayer.evalShangTing(hypotheticalDeck)
+                if (hypotheticalDist < shangTingDist):
+                    shangTingDist = hypotheticalDist
+                    targetTile = tile
+            return targetTile, shangTingDist  
+        tile_to_remove, targetShangTing = minimizeShangTing(self.hand)
+        if (targetShangTing is None):
+            raise ValueError("ShangTing distance calculation failed.")
+
+        # logs
+        self.logger.log_move(self.Id, f"discards a tile: {tile_to_remove.suit}-{tile_to_remove.rank}")
+        self.logger.log(f"Original {originalLength} Tiles:")
+        for tile in originalHand:
+            self.logger.log(f"{tile.suit} {tile.rank}")
+
+        self.logger.log(f"Remaining {len(self.hand)} Tiles")
+        for tile in self.hand:
+            self.logger.log(f"{tile.suit} {tile.rank}")
+        
+        return tile_to_remove
 
     def win(self):
         super().hu()

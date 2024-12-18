@@ -152,7 +152,55 @@ class TestStrategies(unittest.TestCase):
             tile=tile,
             oppID=2
         ))
+    
+    def test_handleSpecialActions_ShangTingPlayer(self):
+        # chow
+        player = ShangTingPlayer(
+            Id=1, 
+            wind='東', 
+            hand=[
+                Card('萬', 1), Card('萬', 2), Card('萬', 3),
+                Card('筒', 4), Card('筒', 5), Card('筒', 6),
+                Card('索', 7), Card('索', 8)
+            ],
+            logger=GameLog(gameID=0)
+        )
+        expectedTile = Card('索', 9)  # Tile that completes a Chow
+        actualTile = player.handleSpecialActions(expectedTile, oppID=0)
+        self.assertEqual(actualTile, expectedTile)
+        self.assertIn([Card('索', 7), Card('索', 8), Card('索', 9)], player.openHand)
 
+        # pong
+        player = ShangTingPlayer(
+            Id=1, 
+            wind='東', 
+            hand=[
+                Card('萬', 1), Card('萬', 2), Card('萬', 3),
+                Card('筒', 4), Card('筒', 5), Card('筒', 6),
+                Card('索', 8), Card('索', 8)
+            ],
+            logger=GameLog(gameID=0)
+        )
+        expectedTile = Card('索', 8)  # Tile that completes a Pong
+        actualTile = player.handleSpecialActions(expectedTile, oppID=2)
+        self.assertEqual(actualTile, expectedTile)
+        self.assertIn([Card('索', 8), Card('索', 8), Card('索', 8)], player.openHand)
 
+        # kong
+        player = ShangTingPlayer(
+            Id=1, 
+            wind='東', 
+            hand=[
+                Card('萬', 1), Card('萬', 2), Card('萬', 3),
+                Card('筒', 4), Card('筒', 5), Card('筒', 6),
+                Card('索', 8), Card('索', 8), Card('索', 8)
+            ],
+            logger=GameLog(gameID=0)
+        )
+        expectedTile = Card('索', 8)  # Tile that completes a Kong
+        actualTile = player.handleSpecialActions(expectedTile, oppID=2)
+        self.assertEqual(actualTile, expectedTile)
+        self.assertIn([Card('索', 8), Card('索', 8), Card('索', 8), Card('索', 8)], player.openHand)
+        
 if __name__ == '__main__':
     unittest.main()

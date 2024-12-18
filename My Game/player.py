@@ -1,5 +1,9 @@
 from Card import Card
+from Rules import Rules
 from gameLog import GameLog
+import math
+import random
+from utils import find_possible_melds
 
 class Player:
     '''
@@ -8,7 +12,7 @@ class Player:
     Id: int = 0
     wind: str = '東'
     hand: list[Card] = []
-    openHand: list[Card] = []
+    openHand: list[list[Card]] = []
 
     points: int = 0
     meld: list[Card] = []
@@ -16,7 +20,7 @@ class Player:
     flowers: list[Card] = []
     hu: bool = False
 
-    def __init__(self, Id: int, wind: str, hand: list='東', logger: GameLog = None):
+    def __init__(self, Id: int, wind: str,  hand: list, logger: GameLog = None):
         self.Id = Id
         self.wind = wind
         self.hand = hand
@@ -29,37 +33,48 @@ class Player:
     def pong(self, tile: Card):
         # obtain the tile from the discarded tile
         self.draw(tile)
-        # remove the hand to the open tile as a meld
-        self.hand.remove(tile)
-        self.hand.remove(tile)
-        self.hand.remove(tile)
-        self.meld.append([tile, tile, tile])
-        self.openHand.append(self.meld)
+        if (self.hand.count(tile) == 3):
+            # remove the hand to the open tile as a meld
+            self.hand.remove(tile)
+            self.hand.remove(tile)
+            self.hand.remove(tile)
+            tile.toDisplay = True
+            self.openHand.append([tile] * 3)
+        else:
+            raise ValueError("Cannot pong")
         self.logger.log_move(self.Id, f"pong {tile.suit}-{tile.rank}")
         return tile
 
-    def chow(self, tile: Card):
+    def chow(self, tile: Card, meld: list[Card]):
         # obtain the tile from the discarded tile
         self.draw(tile)
+        if (tile.suit, tile.rank) not in [(t.suit, t.rank) for t in meld]:
+            return None
         # remove the hand to the open tile as a meld
-        self.hand.remove(tile)
-        self.hand.remove(tile)
-        self.hand.remove(tile)
-        self.meld.append([tile, tile, tile])
-        self.openHand.append(self.meld)
+        self.hand = [
+            tile
+            for tile in self.hand
+            if (tile.suit, tile.rank) not in [(t.suit, t.rank) for t in meld]
+        ]
+        for tile in meld:
+            tile.toDisplay = True
+        self.openHand.append(meld)
         self.logger.log_move(self.Id, f"chow {tile.suit}-{tile.rank}")
         return tile
 
     def kong(self, tile: Card):
         # obtain the tile from the discarded tile
         self.draw(tile)
-        # remove the hand to the open tile as a meld
-        self.hand.remove(tile)
-        self.hand.remove(tile)
-        self.hand.remove(tile)
-        self.hand.remove(tile)
-        self.meld.append([tile, tile, tile, tile])
-        self.openHand.append(self.meld)
+        if (self.hand.count(tile) == 4):
+            # remove the hand to the open tile as a meld
+            self.hand.remove(tile)
+            self.hand.remove(tile)
+            self.hand.remove(tile)
+            self.hand.remove(tile)
+            tile.toDisplay = True
+            self.openHand.append([tile] * 4)
+        else:
+            raise ValueError("Cannot kong")
         self.logger.log_move(self.Id, f"kong {tile.suit}-{tile.rank}")
         return tile
 
@@ -73,16 +88,14 @@ class Player:
     def canChow(self, deck: list[Card], tile: Card, oppID: int) -> bool:
         if tile.suit in ['花', '風', '箭']:
             return False
-        else:
-            target_oppID = 4 if self.Id == 1 else self.Id - 1
-            if (oppID != target_oppID):
-                return False
-            return (deck.count(Card(suit=tile.suit, rank=tile.rank+1)) > 0 and
-                    deck.count(Card(suit=tile.suit, rank=tile.rank+2)) > 0) or \
-                   (deck.count(Card(suit=tile.suit, rank=tile.rank-1)) > 0 and
-                    deck.count(Card(suit=tile.suit, rank=tile.rank+1)) > 0) or \
-                   (deck.count(Card(suit=tile.suit, rank=tile.rank-2)) > 0 and
-                    deck.count(Card(suit=tile.suit, rank=tile.rank-1)) > 0)
+        if (oppID != (self.Id - 1) % 4): # not the previous player
+            return False
+        return (deck.count(Card(suit=tile.suit, rank=tile.rank+1)) > 0 and
+                deck.count(Card(suit=tile.suit, rank=tile.rank+2)) > 0) or \
+                (deck.count(Card(suit=tile.suit, rank=tile.rank-1)) > 0 and
+                deck.count(Card(suit=tile.suit, rank=tile.rank+1)) > 0) or \
+                (deck.count(Card(suit=tile.suit, rank=tile.rank-2)) > 0 and
+                deck.count(Card(suit=tile.suit, rank=tile.rank-1)) > 0)
 
     def canPong(self, deck: list[Card], tile: Card) -> bool:
         return deck.count(tile) == 2
@@ -93,16 +106,24 @@ class Player:
     def handleSpecialActions(self, tile: Card, oppID: int):
         if tile is None:
             return None
-        hypotheticalHand = self.hand + [tile]
-        if self.canChow(hypotheticalHand, tile, oppID):
-            self.chow(tile)
-            return 'chow'
-        elif self.canGong(hypotheticalHand, tile):
-            self.kong(tile)
-            return 'kong'
-        elif self.canPong(hypotheticalHand, tile):
-            self.pong(tile)
-            return 'pong'
+        if self.canChow(self.hand, tile, oppID):
+            possible_melds = [
+                [Card(tile.suit, tile.rank - 2), Card(tile.suit, tile.rank - 1), tile],
+                [Card(tile.suit, tile.rank - 1), tile, Card(tile.suit, tile.rank + 1)],
+                [tile, Card(tile.suit, tile.rank + 1), Card(tile.suit, tile.rank + 2)]
+            ]
+            hypotheticalHand = self.hand.copy()
+            hypotheticalHand += [tile]
+            possible_melds = [
+                meld 
+                for meld in possible_melds 
+                if meld in find_possible_melds(hypotheticalHand)
+            ]
+            return self.chow(tile, random.choice(possible_melds))
+        if self.canPong(self.hand, tile):
+            return self.pong(tile)
+        if self.canGong(self.hand, tile):
+            return self.kong(tile)
         return None
 
     # default strategy (To be overriden by another class)
@@ -120,7 +141,25 @@ class Player:
             self.logger.log(f"{tile.suit} {tile.rank}")
         return tile
 
-    def hu(self):
-        self.hu = True
-        self.logger.log_winner(self.Id)
-        # return self.points
+    def hu(self, incomingTile: Card, closedDeck: list[Card], incomingPlayerId: int, gameID: int, upperScoreLimit: int):
+        rules = Rules(
+            incomingTile=incomingTile,
+            closedDeck=closedDeck,
+            openDeck=self.openHand,
+            incomingPlayerId=incomingPlayerId,
+            flowerDeck=self.flowers,
+            currentPlayerId=self.Id,
+            gameID=gameID,
+            upperScoreLimit=upperScoreLimit
+        )
+        self.points = rules.evalScore()
+        self.hu = self.points is not None
+        if self.hu:
+            self.logger.log_winner(self.Id)
+        else:
+            self.points = - upperScoreLimit if upperScoreLimit is not None else - math.inf
+        
+        # clean up
+        del rules
+
+        return self.points

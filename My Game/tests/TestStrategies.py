@@ -2,6 +2,7 @@ import unittest
 import sys
 sys.path.append('My Game')
 from Card import Card
+from player import Player
 from ShangtingPlayer import ShangTingPlayer
 from utils import find_jokers
 from gameLog import GameLog
@@ -54,6 +55,104 @@ class TestFindJoker(unittest.TestCase):
         discarded_tile = player.discard()
         self.assertIsInstance(discarded_tile, Card)
         print(f"Discarded Tile: {discarded_tile.suit}-{discarded_tile.rank}")
+
+    def test_handleSpecialActions(self):
+        # chow
+        player = Player(
+            Id=1, 
+            wind='東', 
+            hand=[
+                Card('萬', 1), Card('萬', 2), Card('萬', 3),
+                Card('筒', 4), Card('筒', 5), Card('筒', 6),
+                Card('索', 7), Card('索', 8), # missing chow
+                Card('風', '南'), Card('風', '南'), Card('風', '南'),
+                Card('箭', '中'), Card('風', '東')
+            ],
+            logger=GameLog(gameID=0)
+        )
+        tile = Card('索', 9)  # Tile that completes a Chow
+        action = player.handleSpecialActions(tile, oppID=0)
+        self.assertEqual(action, tile)
+        self.assertIn([Card('索', 7), Card('索', 8), Card('索', 9)], player.openHand)
+        for meld in player.openHand:
+            for tile in meld:
+                self.assertTrue(tile.toDisplay)
+        
+        # pong
+        player = Player(
+            Id=1, 
+            wind='東', 
+            hand=[
+                Card('萬', 1), Card('萬', 2), Card('萬', 3),
+                Card('筒', 4), Card('筒', 5), Card('筒', 6),
+                Card('索', 7), Card('索', 7), # missing pong
+                Card('風', '南'), Card('風', '南'), Card('風', '南'),
+                Card('箭', '中'), Card('風', '東')
+            ],
+            logger=GameLog(gameID=0)
+        )
+        tile = Card('索', 7)  # Tile that completes a Pong
+        action = player.handleSpecialActions(tile, oppID=3)
+        self.assertEqual(action, tile)
+        self.assertIn([Card('索', 7), Card('索', 7), Card('索', 7)], player.openHand)
+        for meld in player.openHand:
+            for tile in meld:
+                self.assertTrue(tile.toDisplay)
+
+        # kong
+        player = Player(
+            Id=1, 
+            wind='東', 
+            hand=[
+                Card('萬', 1), Card('萬', 2), Card('萬', 3),
+                Card('筒', 4), Card('筒', 5), Card('筒', 6),
+                Card('索', 7), Card('索', 7), Card('索', 7), # missing kong
+                Card('風', '南'), Card('風', '南'), Card('風', '南'),
+                Card('箭', '中'), Card('風', '東')
+            ],
+            logger=GameLog(gameID=0)
+        )
+        tile = Card('索', 7)  # Tile that completes a Kong
+        action = player.handleSpecialActions(tile, oppID=3)
+        self.assertEqual(action, tile)
+        self.assertIn([Card('索', 7), Card('索', 7), Card('索', 7), Card('索', 7)], player.openHand)
+        for meld in player.openHand:
+            for tile in meld:
+                self.assertTrue(tile.toDisplay)
+
+    def test_canchow(self):
+        player = Player(
+            Id=1, 
+            wind='東', 
+            hand=[
+                Card('萬', 1), Card('萬', 2), Card('萬', 3),
+                Card('筒', 4), Card('筒', 5), Card('筒', 6),
+                Card('索', 7), Card('索', 8), 
+                Card('風', '南'), Card('風', '南'), Card('風', '南'), 
+                Card('箭', '中'), Card('箭', '中')
+            ]
+        )
+        tile = Card('索', 9)
+        self.assertTrue(player.canChow(
+            deck=player.hand,
+            tile=tile,
+            oppID=0
+        ))
+        # negative case 1: tile is not chow-able
+        tile = Card('萬', 8)
+        self.assertFalse(player.canChow(
+            deck=player.hand,
+            tile=tile,
+            oppID=0
+        ))
+        # negative case 2: player is not the previous player
+        tile = Card('萬', 4)
+        self.assertFalse(player.canChow(
+            deck=player.hand,
+            tile=tile,
+            oppID=2
+        ))
+
 
 if __name__ == '__main__':
     unittest.main()

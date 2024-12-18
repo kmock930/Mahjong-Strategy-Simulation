@@ -1,9 +1,9 @@
 from player import Player;
 from Card import Card;
+from Rules import Rules;
 from gameLog import GameLog;
 from utils import break_into_melds_and_pair, find_jokers, find_possible_melds;
 import random
-from collections import Counter
 
 class ShangTingPlayer(Player):
     def __init__(self, Id: int, wind: str, hand: list='東', logger: GameLog = None):
@@ -126,9 +126,39 @@ class ShangTingPlayer(Player):
                     return None
         return None
 
-    def win(self):
-        super().hu()
-        self.shangting = False
+
+    def win(self, incomingTile: Card, closedDeck: list[Card], incomingPlayerId: int, gameID: int, upperScoreLimit: int, discardedTiles: list[Card]):
+        rules = Rules(
+            incomingTile=incomingTile,
+            closedDeck=closedDeck,
+            openDeck=self.openHand,
+            incomingPlayerId=incomingPlayerId,
+            flowerDeck=self.flowers,
+            currentPlayerId=self.Id,
+            gameID=gameID,
+            upperScoreLimit=upperScoreLimit
+        )
+        huPoints = rules.evalScore()
+        if (huPoints is not None and huPoints >= 0):
+            if (
+                ShangTingPlayer.evalShangTing(self.hand) == 1 or # listen
+                huPoints > upperScoreLimit * 0.3 or # larger score
+                len(discardedTiles) > 144 * 0.7 # late game
+            ):
+                del rules
+                return super().declareHu(
+                    incomingTile=incomingTile, 
+                    closedDeck=closedDeck, 
+                    incomingPlayerId=incomingPlayerId, 
+                    gameID=gameID, 
+                    upperScoreLimit=upperScoreLimit
+                )
+        # assume not declaring Hu
+        specialAction: Card = self.handleSpecialActions(incomingTile, incomingPlayerId)
+        if (specialAction is not None):
+            return specialAction
+        else:
+            return self.discard()
 
     @staticmethod
     def evalShangTing(closedDeck: list[Card]) -> int|float|None:

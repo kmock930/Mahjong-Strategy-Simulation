@@ -201,6 +201,78 @@ class TestStrategies(unittest.TestCase):
         actualTile = player.handleSpecialActions(expectedTile, oppID=2)
         self.assertEqual(actualTile, expectedTile)
         self.assertIn([Card('索', 8), Card('索', 8), Card('索', 8), Card('索', 8)], player.openHand)
+
+    def test_declareHu_general(self):
+        # OK
+        valid_hand = [
+            Card('萬', 1), Card('萬', 2), Card('萬', 3),  # Chow
+            Card('筒', 4), Card('筒', 5), Card('筒', 6),  # Chow
+            Card('索', 7), Card('索', 8), Card('索', 9),  # Chow
+            Card('風', '東'), Card('風', '東'), Card('風', '東'),  # Pong
+            Card('筒', 1)  # Potential Pair
+        ]
+        player = Player(
+            Id=1, 
+            wind='東', 
+            hand=valid_hand,
+            logger=GameLog(gameID=0)
+        )
+        incoming_tile = Card('筒', 1)
+        result = player.declareHu(
+            incomingTile=incoming_tile,
+            closedDeck=valid_hand, 
+            incomingPlayerId=1,
+            gameID=0, 
+            upperScoreLimit=100
+        )
+        self.assertTrue(result, "Player should declare Hu.")
+        self.assertTrue(player.hu, "Player's Hu status should be True.")
+
+        # Failed
+        invalid_hand = valid_hand[:-1]  # Remove one tile to invalidate the hand
+        player = Player(
+            Id=1, 
+            wind='東', 
+            hand=valid_hand,
+            logger=GameLog(gameID=0)
+        )
+        incoming_tile = Card('筒', 3)
+        result = player.declareHu(
+            incomingTile=incoming_tile, 
+            closedDeck=valid_hand, 
+            incomingPlayerId=1,
+            gameID=0, 
+            upperScoreLimit=100)
+        self.assertTrue(result < 0, "Player should not declare Hu.")
+        self.assertEqual(player.points, -100, "Player should be penalized for false Hu.")
+
+    def test_win_ShangTing(self):
+        valid_hand = [
+            Card('萬', 1), Card('萬', 2), Card('萬', 3),  # Chow
+            Card('筒', 4), Card('筒', 5), Card('筒', 6),  # Chow
+            Card('索', 7), Card('索', 8), Card('索', 9),  # Chow
+            Card('風', '東'), Card('風', '東'), Card('風', '東'),  # Pong
+            Card('筒', 1)  # Potential Pair
+        ]
+        player = ShangTingPlayer(
+            Id=1, 
+            wind='東', 
+            hand=valid_hand,
+            logger=GameLog(gameID=0)
+        )
+        incoming_tile = Card('筒', 1)
+        discarded_tiles = []
+        result = player.win(
+            incomingTile=incoming_tile, 
+            closedDeck=valid_hand,
+            incomingPlayerId=1,
+            gameID=0, upperScoreLimit=100,  
+            discardedTiles=discarded_tiles
+        )
+        self.assertTrue(isinstance(result, Card), "ShangTingPlayer should NOT declare Hu.")
+        self.assertFalse(player.hu, "Player's Hu status should be False.")
+        self.assertIn(result, player.hand, "Player should draw the incoming tile.")
         
+
 if __name__ == '__main__':
     unittest.main()

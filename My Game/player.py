@@ -141,7 +141,7 @@ class Player:
             self.logger.log(f"{tile.suit} {tile.rank}")
         return tile
 
-    def hu(self, incomingTile: Card, closedDeck: list[Card], incomingPlayerId: int, gameID: int, upperScoreLimit: int):
+    def declareHu(self, incomingTile: Card, closedDeck: list[Card], incomingPlayerId: int, gameID: int, upperScoreLimit: int):
         rules = Rules(
             incomingTile=incomingTile,
             closedDeck=closedDeck,
@@ -156,8 +156,10 @@ class Player:
         self.hu = self.points is not None
         if self.hu:
             self.logger.log_winner(self.Id)
-        else:
+        else: # penalizing a fake declare
+            self.logger.log(f"Player {self.Id} declared Hu but it is a false alarm.")
             self.points = - upperScoreLimit if upperScoreLimit is not None else - math.inf
+            self.logger.log(f"Game Ended where Player {self.Id} was penalized {abs(self.points)} points.")
         
         # clean up
         del rules

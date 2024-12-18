@@ -7,7 +7,7 @@ from ShangtingPlayer import ShangTingPlayer
 from utils import find_jokers
 from gameLog import GameLog
 
-class TestFindJoker(unittest.TestCase):
+class TestStrategies(unittest.TestCase):
     def test_find_joker_present(self):
         closedDeck = [
             Card('萬', 1), Card('萬', 1), Card('萬', 2), 

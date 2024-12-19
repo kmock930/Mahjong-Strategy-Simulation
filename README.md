@@ -18,3 +18,9 @@ Humans can make decision under high uncertainty. After learning the fundamentals
     * Default strategy (baseline)
     * ShangTing distance
     * Markov Decision Process
+
+## Acknowledgement
+I would like to express gratitude to those open-source solutions which inspired my code solutions.
+- MJai Simulator: https://github.com/gimite/mjai
+- MJX Simulator: https://github.com/mjx-project/mjx
+- RLCard: https://rlcard.org/

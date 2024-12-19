@@ -2,9 +2,14 @@ from Card import Card
 from player import Player
 from gameLog import GameLog
 import random
+import json
 # RLCard
 import rlcard
 from rlcard.games.mahjong.game import MahjongGame as Game
+
+# players
+from ShangtingPlayer import ShangTingPlayer
+from MarkovPlayer import MarkovPlayer
 
 # for debugging
 import importlib
@@ -22,10 +27,14 @@ class CustomGame(Game):
     unseenTiles: list[Card] = []
     game: Game = None
     logger: GameLog = None
+    # for Markov Player
+    history: list = []
 
     def __init__(self, experiment: bool = False, players: list[Player] = None, gameID: int = 1):
+        super().__init__()
         self.game = rlcard.make('mahjong').game
         self.logger = GameLog(gameID=gameID)
+        self.history = []
         # init players
         self.logger.log("Initializing players...")
         self.players = players if players is not None and len(players) > 0 else [
@@ -130,19 +139,45 @@ class CustomGame(Game):
         return [tile for tile in [player.hand for player in self.players]]
 
     def play(self, playerID: int, oppDiscardTile: Card = None):
+        # Save current state
+        current_state = {
+            "hand": self.players[playerID - 1].hand.copy(),
+            "open_melds": self.players[playerID - 1].openHand.copy(),
+            "discarded_tiles": self.discardedTiles.copy(),
+            "player_id": playerID,
+            "wind": self.players[playerID - 1].wind,
+            "game_id": self.logger.log_file.split("_")[0]  # Extract game ID from log filename
+        }
+
         # player draws a tile
         if len(self.unseenTiles) > 0:
             newTile: Card = self.unseenTiles.pop(0) #牌頭
             self.players[playerID-1].draw(newTile)
         else: 
             self.logger.log("Game Ended.")
+            return
 
         # handle flower tiles
         self.handleFlowers()
 
+        # log valid legal actions
+        legal_actions = ["discard"]
+        if oppDiscardTile is not None:
+            if self.players[playerID - 1].canChow(self.players[playerID - 1].hand, oppDiscardTile, (playerID - 1) % 4):
+                legal_actions.append("chow")
+            if self.players[playerID - 1].canPong(self.players[playerID - 1].hand, oppDiscardTile):
+                legal_actions.append("pong")
+            if self.players[playerID - 1].canGong(self.players[playerID - 1].hand, oppDiscardTile):
+                legal_actions.append("kong")
+        
         # player discards a tile according to his own strategy
+        current_state["legal_actions"] = legal_actions
         discardedTile = self.players[playerID-1].discard()
         self.discardedTiles.append(discardedTile)
+
+        # Log the action
+        action = "discard"
+        reward = 0
 
         # handle special actions for each player
         for i in range(len(self.players)):
@@ -153,8 +188,30 @@ class CustomGame(Game):
                 )
                 if specialAction is not None:
                     self.logger.log(f"Player {self.players[i].Id} {specialAction}!")
+                    action = specialAction
+                    reward = 1
+                    discardedTile = self.discardedTiles.pop()
                     # change the order to the player who took the special action
                     return self.play(self.players[i].Id, discardedTile)
+        
+        # Save next state
+        next_state = {
+            "hand": self.players[playerID - 1].hand.copy(),
+            "open_melds": self.players[playerID - 1].openHand.copy(),
+            "discarded_tiles": self.discardedTiles.copy(),
+            "player_id": playerID,
+            "wind": self.players[playerID - 1].wind,
+            "game_id": self.logger.log_file.split("_")[0]
+        }
+
+        # Append to history
+        self.history.append({
+            "state": current_state,
+            "action": action,
+            "player_id": playerID,
+            "reward": reward,
+            "next_state": next_state
+        })
 
     def run(self):
         '''
@@ -174,6 +231,7 @@ class CustomGame(Game):
         '''
         self.unseenTiles = []
         self.discardedTiles = []
+        self.history = []
         self.init_tiles()
         self.shuffle()
         self.deal()
@@ -187,16 +245,48 @@ class CustomGame(Game):
             current_wind_index = winds.index(player.wind)
             player.wind = winds[(current_wind_index + 1) % len(winds)]
 
+    def analyze_history(self):
+        for entry in self.history:
+            print("Player:", entry["player_id"])
+            print("Action:", entry["action"])
+            print("Reward:", entry["reward"])
+            print("State:", entry["state"])
+            print("Next State:", entry["next_state"])
+    
+    def export_history(self, filename="history.json"):
+        '''
+        Provide offline analysis
+        '''
+        with open(filename, "w") as f:
+            json.dump(self.history, f, indent=4)
+
 def main():
-    num_games = 4  # Number of games to run
+    num_games = 100  # Number of games to run
 
     for iteration in range(num_games):
+        gameID: int = iteration+1
         game = CustomGame(
             experiment=True,
-            gameID=iteration+1
+            gameID=gameID,
+            players=[
+                ShangTingPlayer(
+                    Id=1, 
+                    wind='東', 
+                    hand=[], 
+                    logger=GameLog(gameID=gameID)
+                ),
+                Player(2, '南', [], logger=GameLog(gameID=gameID)),
+                MarkovPlayer(
+                    Id=3, 
+                    wind='西', 
+                    hand=[], 
+                    logger=GameLog(gameID=gameID)
+                ),
+                Player(4, '北', [], logger=GameLog(gameID=gameID))
+            ]
         )
 
-        game.logger.log(f"Starting Game {iteration+1}")
+        game.logger.log(f"Starting Game {gameID}")
 
         # player logs
         logString:str = ""

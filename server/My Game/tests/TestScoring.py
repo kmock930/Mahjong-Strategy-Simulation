@@ -1,6 +1,6 @@
 import unittest
 import sys
-sys.path.append('My Game')
+sys.path.append('server/My Game')
 from Rules import Rules
 from Card import Card
 

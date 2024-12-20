@@ -1,6 +1,6 @@
 import unittest;
 import sys;
-sys.path.append('My Game');
+sys.path.append('server/My Game');
 from Rules import Rules;
 from Card import Card;
 from utils import is_valid_pair, is_valid_meld, break_into_melds_and_pair;

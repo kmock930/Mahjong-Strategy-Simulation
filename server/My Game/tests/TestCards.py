@@ -1,6 +1,6 @@
 import unittest
 import sys;
-sys.path.append('My Game');
+sys.path.append('server/My Game');
 from Card import Card
 
 class TestCard(unittest.TestCase):

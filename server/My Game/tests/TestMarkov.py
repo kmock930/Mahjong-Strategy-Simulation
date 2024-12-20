@@ -1,6 +1,6 @@
 import unittest
 import sys
-sys.path.append('My Game')
+sys.path.append('server/My Game')
 from MarkovPlayer import MarkovPlayer
 from Card import Card
 from gameLog import GameLog
